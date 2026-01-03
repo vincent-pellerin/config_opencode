@@ -292,6 +292,149 @@ opencode --agent system-builder
 - README, guides utilisateur
 - Documentation technique
 
+## 🤖 Système de Modèles et Délégation
+
+### 📊 Configuration des Modèles
+
+#### **Agents Primaires** (ont des modèles définis)
+
+| Agent | Model Family | Recommended Models | Temperature |
+|-------|--------------|-------------------|-------------|
+| **openagent** | claude | claude-sonnet-4-5, claude-3-5-sonnet-20241022 | 0.2 |
+| **opencoder** | claude | claude-sonnet-4-5, claude-3-5-sonnet-20241022 | 0.1 |
+| **system-builder** | (non défini) | (non défini) | 0.2 |
+
+#### **Subagents** (PAS de modèles définis)
+
+| Subagent | Model Family | Recommended Models | Temperature |
+|----------|--------------|-------------------|-------------|
+| **task-manager** | ❌ Non défini | ❌ Non défini | 0.1 |
+| **coder-agent** | ❌ Non défini | ❌ Non défini | 0 |
+| **tester** | ❌ Non défini | ❌ Non défini | 0.1 |
+| **reviewer** | ❌ Non défini | ❌ Non défini | 0.1 |
+| **build-agent** | ❌ Non défini | ❌ Non défini | 0.1 |
+| **documentation** | ❌ Non défini | ❌ Non défini | (non défini) |
+
+### 🔄 Hiérarchie des Modèles
+
+```
+CLI --model override
+        ↓
+┌─────────────────────────┐
+│  AGENT PRIMAIRE         │
+│  recommended_models:    │
+│  - claude-sonnet-4-5    │
+│  - claude-3-5-sonnet    │
+└─────────────────────────┘
+        ↓ (délégation)
+┌─────────────────────────┐
+│  SUBAGENT               │
+│  ❌ PAS de modèles      │
+│  ✅ Hérite du parent    │
+└─────────────────────────┘
+```
+
+### 📋 Règles de Fonctionnement des Modèles
+
+#### **1. Priorité des Modèles**
+```
+1. CLI --model (priorité absolue)
+2. Agent recommended_models (si pas de CLI override)
+3. Héritage du parent (pour subagents)
+```
+
+#### **2. Héritage pour Subagents**
+- **Subagents n'ont PAS de modèles propres**
+- **Héritent TOUJOURS du modèle de l'agent primaire parent**
+- **Température peut être différente** (définie dans chaque agent)
+
+#### **3. Autonomie des Agents**
+```
+Agents Primaires:
+✅ Autonomes (modèles propres)
+✅ Interface utilisateur directe
+✅ Peuvent déléguer aux subagents
+
+Subagents:
+❌ PAS autonomes (pas de modèles)
+❌ PAS d'interface directe
+✅ Héritent du modèle parent
+```
+
+### 🔧 Exemples Pratiques de Modèles
+
+#### **Exemple 1: OpenAgent avec délégation**
+```bash
+# Commande
+opencode --agent openagent --model anthropic/claude-sonnet-4
+
+# Workflow
+1. OpenAgent utilise Claude Sonnet 4
+2. OpenAgent délègue à task-manager
+3. task-manager utilise Claude Sonnet 4 (héritage)
+4. OpenAgent délègue à coder-agent  
+5. coder-agent utilise Claude Sonnet 4 (héritage)
+```
+
+#### **Exemple 2: OpenCoder direct**
+```bash
+# Commande
+opencode --agent opencoder
+
+# Workflow
+1. OpenCoder utilise Claude Sonnet 4.5 (son recommended_model)
+2. OpenCoder fait tout lui-même (pas de délégation)
+3. Pas de subagents impliqués
+```
+
+#### **Exemple 3: Override pour OpenCoder**
+```bash
+# Commande
+opencode --agent opencoder --model anthropic/claude-sonnet-4
+
+# Workflow
+1. OpenCoder utilise Claude Sonnet 4 (CLI override)
+2. Ignore ses recommended_models (Claude Sonnet 4.5)
+```
+
+### ❌ Délégation Inter-Primaires (Impossible)
+
+**Question fréquente:** "OpenAgent peut-il déléguer à OpenCoder ?"
+
+**Réponse:** ❌ **NON** - Les agents primaires ne se délèguent pas entre eux.
+
+```
+❌ CE QUI NE SE PASSE PAS:
+OpenAgent → OpenCoder (impossible)
+
+✅ CE QUI SE PASSE:
+OpenAgent → task-manager (subagent)
+OpenAgent → coder-agent (subagent)
+OpenCoder → (travail direct, pas de délégation)
+```
+
+### 🎯 Architecture Réelle des Modèles
+
+```
+Utilisateur
+    ↓
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   openagent     │    │   opencoder     │    │ system-builder  │
+│ (Claude S4.5)   │    │ (Claude S4.5)   │    │   (non défini)  │
+│ Délègue ✅      │    │ Direct ❌       │    │ Délègue ✅      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+    ↓ délégation           (pas de délégation)     ↓ délégation
+┌─────────────────┐                           ┌─────────────────┐
+│   Subagents     │                           │   Subagents     │
+│ (hérite modèle) │                           │ (hérite modèle) │
+│ • task-manager  │                           │ • domain-analyzer│
+│ • coder-agent   │                           │ • agent-generator│
+│ • tester        │                           │ • etc.          │
+│ • reviewer      │                           └─────────────────┘
+│ • etc.          │
+└─────────────────┘
+```
+
 ## 💡 Points Clés à Retenir
 
 ### **Architecture:**
@@ -305,6 +448,13 @@ opencode --agent system-builder
 2. **OpenCoder** = Développeur expert (fait tout lui-même)
 3. **System Builder** = Architecte de systèmes (génération complète)
 
+### **Modèles:**
+1. **CLI override absolu** = `--model` override tout
+2. **Héritage de modèle** = Subagents héritent toujours du parent primaire
+3. **Pas de délégation inter-primaires** = OpenAgent ≠> OpenCoder
+4. **Température indépendante** = Chaque agent garde sa température
+5. **Subagents = extensions** = Extensions spécialisées de l'agent primaire
+
 ### **Contexte:**
 1. **Chargement automatique** des standards projet
 2. **Contexte temporaire** pour délégation
@@ -315,10 +465,10 @@ opencode --agent system-builder
 2. **Permissions limitées** pour subagents
 3. **Interdiction fichiers sensibles** pour tous
 
-Cette architecture permet une **spécialisation poussée** tout en gardant une **interface simple** pour l'utilisateur ! 🚀
+Cette architecture permet une **spécialisation poussée** avec **héritage de modèles intelligent** tout en gardant une **interface simple** pour l'utilisateur ! 🚀
 
 ---
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Dernière mise à jour:** Janvier 2026  
 **OpenCode Version:** 1.0.223
