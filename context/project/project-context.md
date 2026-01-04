@@ -1,52 +1,66 @@
 # Project Context & Architecture
 
+## Global Context References
+
+For detailed environment, tools, and infrastructure information, see:
+- **@.opencode/context/global/environments.md** - Complete environment configuration (local, VPS vincent, VPS dlthub)
+- **@.opencode/context/global/machine.md** - Installed tools and software stack
+- **@.opencode/context/global/tools.md** - CLI commands and usage reference
+- **@.opencode/context/global/docker-services.md** - Docker services on VPS (Traefik, n8n, Matomo)
+
 ## Environment Architecture
 
-### Environment Detection
-**Current Environment Check:**
+### Quick Environment Detection
 ```bash
-# Quick environment detection
-if [[ "$(whoami)@$(hostname)" == "vincent@host" ]]; then
-    echo "VPS Environment"
+# Detect current environment
+CURRENT_ENV="$(whoami)@$(hostname)"
+
+if [[ "$CURRENT_ENV" == "vincent@vincent-X390-2025" ]]; then
+    echo "Local Development Environment"
+elif [[ "$CURRENT_ENV" == "vincent@host" ]]; then
+    echo "VPS Production Environment (vincent)"
+elif [[ "$CURRENT_ENV" == "dlthub@host" ]]; then
+    echo "VPS Production Environment (dlthub)"
 else
-    echo "Local Environment"
+    echo "Unknown Environment: $CURRENT_ENV"
 fi
 ```
 
-### Local Development Environment
-- **Location:** `/home/vincent/dev/`
-- **User:** `vincent@[local-hostname]`
+### Environment Summary
+
+#### Local Development
+- **Hostname:** `vincent-X390-2025`
+- **User:** `vincent`
+- **Path:** `/home/vincent/dev/`
 - **Purpose:** Development, testing, local Obsidian vault
-- **Obsidian Vault:** `/home/vincent/dev/Obsidian/`
-- **Git:** Local repositories for development
 
-### VPS Production Environment  
-- **Location:** `/home/vincent/`
-- **User:** `vincent@host`
-- **Connection:** `ssh vps_h` (SSH key authentication)
-- **Purpose:** Production services, VPS Obsidian vault, bot deployment
-- **Obsidian Vault:** `/home/vincent/obsidian-second-brain-vps/`
-- **Docker Services:** `/home/vincent/docker/*/` (Traefik, n8n, Matomo, etc.)
+#### VPS Production (vincent)
+- **Hostname:** `host`
+- **User:** `vincent`
+- **SSH Alias:** `vps_h`
+- **Path:** `/home/vincent/`
+- **Purpose:** Production services, Docker, Obsidian vault, web scraping
 
-### Project Structure Mapping
-```
-Local:  /home/vincent/dev/[project-name]/
-VPS:    /home/vincent/[project-name]/
-Docker: /home/vincent/docker/[service-name]/
-```
+#### VPS Production (dlthub)
+- **Hostname:** `host`
+- **User:** `dlthub`
+- **SSH Alias:** `vps_dlt`
+- **Path:** `/home/dlthub/`
+- **Purpose:** dlt pipelines, dbt transformations, BigQuery operations
 
-### Connection & Deployment
-- **SSH Access:** `ssh vps_h` (no password required)
-- **File Transfer:** `scp`, `rsync`, or `git push`
-- **Service Management:** Docker Compose on VPS
-- **Monitoring:** Traefik dashboard, service logs
+### Project Mapping
+
+| Project | Local | VPS | VPS User | Stack |
+|---------|-------|-----|----------|-------|
+| **dlthub-unified** | `/home/vincent/dev/dlthub-unified/` | `/home/dlthub/dlthub-project/dlthub-unified/` | `dlthub` (vps_dlt) | Python, dlt, dbt, BigQuery |
+| **immo-stras** | `/home/vincent/dev/immo-stras/` | `/home/vincent/immo-stras/` | `vincent` (vps_h) | Python, Playwright, DuckDB, PostgreSQL |
+| **ga4-weekly-report** | `/home/vincent/dev/ga4-weekly-report/` | `/home/vincent/ga4-weekly-report/` | `vincent` (vps_h) | Python, GA4 API, BigQuery |
 
 ### Critical Rules for Agents
 - **ALWAYS verify environment** before executing commands
-- **Local tasks:** Development, testing, local vault operations
-- **VPS tasks:** Production deployment, bot operations, VPS vault operations  
-- **Use `ssh vps_h` to connect** when VPS operations are required
-- **Check `whoami@hostname`** to confirm current environment
+- **Use appropriate SSH alias** for VPS operations (`vps_h` or `vps_dlt`)
+- **Check project mapping** to determine correct VPS user and path
+- **Consult global context files** for detailed configuration
 
 ## Technology Stack
 
