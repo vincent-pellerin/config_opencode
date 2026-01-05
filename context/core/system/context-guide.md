@@ -12,6 +12,8 @@
 
 **Session Location**: `.tmp/sessions/{timestamp}-{task-slug}/context.md`
 
+**Validation**: ALWAYS validate structure before creation using `validation-checklist.md`
+
 ---
 
 ## Overview
@@ -48,6 +50,10 @@ All files are in `.opencode/context/core/` with organized subfolders:
 ### Workflows (Process Templates + Review)
 - `workflows/delegation.md` - Delegation template [high]
 - `workflows/task-breakdown.md` - Complex task breakdown [high]
+
+### System (Internal Guidelines)
+- `system/context-guide.md` - Context system usage [critical]
+- `system/validation-checklist.md` - Structure validation protocol [critical]
 - `workflows/sessions.md` - Session lifecycle [medium]
 - `workflows/review.md` - Code review guidelines [high]
 
