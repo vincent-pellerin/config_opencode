@@ -390,6 +390,76 @@ docs: update installation instructions
 refactor: extract retry logic to utility
 ```
 
+### Git Ignore Standards
+
+**CRITICAL: Always add these to .gitignore in every project:**
+
+```gitignore
+# OpenCode local configurations (NEVER commit)
+.opencode/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# API Keys and credentials
+*.key
+*.pem
+credentials.json
+service-account*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+```
+
+**Why .opencode/ must be ignored:**
+- ✅ **Security**: Prevents accidental commit of local configs with sensitive data
+- ✅ **Personal configs**: Each developer has their own OpenCode setup
+- ✅ **Clean repos**: Project code ≠ Developer tools configuration
+- ✅ **Team flexibility**: Allows individual OpenCode customization
+
+**Global config precedence:**
+- `~/.opencode/` (global) **ALWAYS** takes precedence over local configs
+- Local `.opencode/` only adds project-specific context
+- Global standards and workflows cannot be overridden locally
+
 ### Development Workflow
 
 #### Makefile Pattern

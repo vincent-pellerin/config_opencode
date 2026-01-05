@@ -1,0 +1,464 @@
+#!/bin/bash
+set -e
+
+# OpenCode Project Setup Script
+# Creates new project with proper OpenCode configuration
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_header() {
+    echo -e "${BLUE}=== $1 ===${NC}"
+}
+
+# Function to show usage
+show_usage() {
+    cat << EOF
+Usage: setup-project [OPTIONS] PROJECT_NAME
+
+Setup a new project with OpenCode configuration.
+
+OPTIONS:
+    -d, --directory DIR     Project directory (default: ~/dev/PROJECT_NAME)
+    -t, --type TYPE        Project type (python|node|go|rust|generic)
+    -f, --framework FRAMEWORK  Framework (django|fastapi|react|nextjs|etc)
+    -h, --help             Show this help message
+
+EXAMPLES:
+    setup-project my-api --type python --framework fastapi
+    setup-project my-app --type node --framework react
+    setup-project data-pipeline --type python
+    setup-project my-project --directory /custom/path
+
+EOF
+}
+
+# Default values
+PROJECT_DIR=""
+PROJECT_TYPE="generic"
+FRAMEWORK=""
+PROJECT_NAME=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--directory)
+            PROJECT_DIR="$2"
+            shift 2
+            ;;
+        -t|--type)
+            PROJECT_TYPE="$2"
+            shift 2
+            ;;
+        -f|--framework)
+            FRAMEWORK="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -*)
+            print_error "Unknown option $1"
+            show_usage
+            exit 1
+            ;;
+        *)
+            if [[ -z "$PROJECT_NAME" ]]; then
+                PROJECT_NAME="$1"
+            else
+                print_error "Multiple project names provided"
+                show_usage
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Validate required arguments
+if [[ -z "$PROJECT_NAME" ]]; then
+    print_error "Project name is required"
+    show_usage
+    exit 1
+fi
+
+# Set default project directory if not provided
+if [[ -z "$PROJECT_DIR" ]]; then
+    PROJECT_DIR="$HOME/dev/$PROJECT_NAME"
+fi
+
+# Validate project type
+case $PROJECT_TYPE in
+    python|node|go|rust|generic)
+        ;;
+    *)
+        print_error "Invalid project type: $PROJECT_TYPE"
+        print_error "Valid types: python, node, go, rust, generic"
+        exit 1
+        ;;
+esac
+
+print_header "OpenCode Project Setup"
+print_status "Project name: $PROJECT_NAME"
+print_status "Project directory: $PROJECT_DIR"
+print_status "Project type: $PROJECT_TYPE"
+if [[ -n "$FRAMEWORK" ]]; then
+    print_status "Framework: $FRAMEWORK"
+fi
+
+# Check if directory already exists
+if [[ -d "$PROJECT_DIR" ]]; then
+    print_warning "Directory $PROJECT_DIR already exists"
+    read -p "Continue anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_status "Aborted"
+        exit 0
+    fi
+fi
+
+# Create project directory
+print_status "Creating project directory..."
+mkdir -p "$PROJECT_DIR"
+cd "$PROJECT_DIR"
+
+# Copy template files
+print_status "Setting up OpenCode configuration..."
+
+# Copy .gitignore
+cp ~/.opencode/templates/project/.gitignore .
+
+# Create .opencode structure
+mkdir -p .opencode/context
+
+# Function to replace template variables
+replace_template_vars() {
+    local file="$1"
+    local temp_file=$(mktemp)
+    
+    # Basic replacements
+    sed "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" "$file" > "$temp_file"
+    
+    # Type-specific replacements
+    case $PROJECT_TYPE in
+        python)
+            sed -i "s/{{PRIMARY_LANGUAGE}}/Python 3.12+/g" "$temp_file"
+            sed -i "s/{{LANGUAGE_EXTENSION}}/python/g" "$temp_file"
+            sed -i "s/{{FRAMEWORK}}/${FRAMEWORK:-FastAPI}/g" "$temp_file"
+            sed -i "s/{{DATABASE}}/PostgreSQL/g" "$temp_file"
+            sed -i "s/{{DEPLOYMENT}}/Docker/g" "$temp_file"
+            sed -i "s/{{IMPORT_EXAMPLES}}/import asyncio\nfrom fastapi import FastAPI\nimport pandas as pd/g" "$temp_file"
+            sed -i "s/{{DEV_COMMANDS}}/uv run python main.py\nuv run uvicorn main:app --reload/g" "$temp_file"
+            sed -i "s/{{TEST_COMMANDS}}/uv run pytest tests\/ -v/g" "$temp_file"
+            sed -i "s/{{BUILD_COMMANDS}}/docker build -t $PROJECT_NAME .\ndocker run -p 8000:8000 $PROJECT_NAME/g" "$temp_file"
+            ;;
+        node)
+            sed -i "s/{{PRIMARY_LANGUAGE}}/TypeScript\/JavaScript/g" "$temp_file"
+            sed -i "s/{{LANGUAGE_EXTENSION}}/typescript/g" "$temp_file"
+            sed -i "s/{{FRAMEWORK}}/${FRAMEWORK:-Express}/g" "$temp_file"
+            sed -i "s/{{DATABASE}}/MongoDB/g" "$temp_file"
+            sed -i "s/{{DEPLOYMENT}}/Vercel/g" "$temp_file"
+            sed -i "s/{{IMPORT_EXAMPLES}}/import express from 'express'\nimport { Request, Response } from 'express'/g" "$temp_file"
+            sed -i "s/{{DEV_COMMANDS}}/npm run dev\nnpm start/g" "$temp_file"
+            sed -i "s/{{TEST_COMMANDS}}/npm test\nnpm run test:watch/g" "$temp_file"
+            sed -i "s/{{BUILD_COMMANDS}}/npm run build\nnpm run deploy/g" "$temp_file"
+            ;;
+        go)
+            sed -i "s/{{PRIMARY_LANGUAGE}}/Go/g" "$temp_file"
+            sed -i "s/{{LANGUAGE_EXTENSION}}/go/g" "$temp_file"
+            sed -i "s/{{FRAMEWORK}}/${FRAMEWORK:-Gin}/g" "$temp_file"
+            sed -i "s/{{DATABASE}}/PostgreSQL/g" "$temp_file"
+            sed -i "s/{{DEPLOYMENT}}/Docker/g" "$temp_file"
+            sed -i "s/{{IMPORT_EXAMPLES}}/import (\n    \"github.com\/gin-gonic\/gin\"\n    \"gorm.io\/gorm\"\n)/g" "$temp_file"
+            sed -i "s/{{DEV_COMMANDS}}/go run main.go\ngo mod tidy/g" "$temp_file"
+            sed -i "s/{{TEST_COMMANDS}}/go test .\/...\ngo test -v .\/tests/g" "$temp_file"
+            sed -i "s/{{BUILD_COMMANDS}}/go build -o $PROJECT_NAME\ndocker build -t $PROJECT_NAME ./g" "$temp_file"
+            ;;
+        rust)
+            sed -i "s/{{PRIMARY_LANGUAGE}}/Rust/g" "$temp_file"
+            sed -i "s/{{LANGUAGE_EXTENSION}}/rust/g" "$temp_file"
+            sed -i "s/{{FRAMEWORK}}/${FRAMEWORK:-Axum}/g" "$temp_file"
+            sed -i "s/{{DATABASE}}/PostgreSQL/g" "$temp_file"
+            sed -i "s/{{DEPLOYMENT}}/Docker/g" "$temp_file"
+            sed -i "s/{{IMPORT_EXAMPLES}}/use axum::{routing::get, Router};\nuse tokio::net::TcpListener;/g" "$temp_file"
+            sed -i "s/{{DEV_COMMANDS}}/cargo run\ncargo watch -x run/g" "$temp_file"
+            sed -i "s/{{TEST_COMMANDS}}/cargo test\ncargo test -- --nocapture/g" "$temp_file"
+            sed -i "s/{{BUILD_COMMANDS}}/cargo build --release\ndocker build -t $PROJECT_NAME ./g" "$temp_file"
+            ;;
+        *)
+            # Generic replacements
+            sed -i "s/{{PRIMARY_LANGUAGE}}/[SPECIFY_LANGUAGE]/g" "$temp_file"
+            sed -i "s/{{LANGUAGE_EXTENSION}}/bash/g" "$temp_file"
+            sed -i "s/{{FRAMEWORK}}/[SPECIFY_FRAMEWORK]/g" "$temp_file"
+            sed -i "s/{{DATABASE}}/[SPECIFY_DATABASE]/g" "$temp_file"
+            sed -i "s/{{DEPLOYMENT}}/[SPECIFY_DEPLOYMENT]/g" "$temp_file"
+            sed -i "s/{{IMPORT_EXAMPLES}}/# Add import examples here/g" "$temp_file"
+            sed -i "s/{{DEV_COMMANDS}}/# Add development commands here/g" "$temp_file"
+            sed -i "s/{{TEST_COMMANDS}}/# Add testing commands here/g" "$temp_file"
+            sed -i "s/{{BUILD_COMMANDS}}/# Add build commands here/g" "$temp_file"
+            ;;
+    esac
+    
+    # Common replacements for all types
+    sed -i "s/{{ARCHITECTURE_DESCRIPTION}}/[DESCRIBE_ARCHITECTURE]/g" "$temp_file"
+    sed -i "s/{{ENV_VARIABLES}}/# Add environment variables here/g" "$temp_file"
+    sed -i "s/{{PERFORMANCE_NOTES}}/[ADD_PERFORMANCE_CONSIDERATIONS]/g" "$temp_file"
+    sed -i "s/{{SECURITY_NOTES}}/[ADD_SECURITY_CONSIDERATIONS]/g" "$temp_file"
+    
+    # Project-specific placeholders
+    sed -i "s/{{PROJECT_MISSION}}/[DEFINE_PROJECT_MISSION]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_1}}/[OBJECTIVE_1]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_DESCRIPTION_1}}/[DESCRIPTION_1]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_2}}/[OBJECTIVE_2]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_DESCRIPTION_2}}/[DESCRIPTION_2]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_3}}/[OBJECTIVE_3]/g" "$temp_file"
+    sed -i "s/{{OBJECTIVE_DESCRIPTION_3}}/[DESCRIPTION_3]/g" "$temp_file"
+    
+    # Replace remaining placeholders with TODO markers
+    sed -i 's/{{[^}]*}}/[TODO: CUSTOMIZE]/g' "$temp_file"
+    
+    mv "$temp_file" "$file"
+}
+
+# Copy and customize template files
+for template_file in ~/.opencode/templates/project/.opencode/context/*.md; do
+    if [[ -f "$template_file" ]]; then
+        filename=$(basename "$template_file")
+        cp "$template_file" ".opencode/context/$filename"
+        replace_template_vars ".opencode/context/$filename"
+        print_status "Created .opencode/context/$filename"
+    fi
+done
+
+# Create basic project structure based on type
+print_status "Creating project structure..."
+
+case $PROJECT_TYPE in
+    python)
+        mkdir -p src tests config docs scripts
+        cat > requirements.txt << EOF
+# Core dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+
+# Development dependencies
+pytest>=7.4.0
+black>=23.0.0
+isort>=5.12.0
+ruff>=0.1.0
+mypy>=1.7.0
+EOF
+        
+        cat > pyproject.toml << EOF
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "$PROJECT_NAME"
+version = "0.1.0"
+description = ""
+authors = [{name = "Vincent", email = "vincent@example.com"}]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+EOF
+        
+        cat > src/main.py << EOF
+"""
+$PROJECT_NAME - Main application module
+"""
+from fastapi import FastAPI
+
+app = FastAPI(title="$PROJECT_NAME", version="0.1.0")
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "Hello from $PROJECT_NAME!"}
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+EOF
+        ;;
+        
+    node)
+        mkdir -p src tests config docs scripts
+        cat > package.json << EOF
+{
+  "name": "$PROJECT_NAME",
+  "version": "0.1.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "tsc",
+    "lint": "eslint src/**/*.{js,ts}",
+    "format": "prettier --write src/**/*.{js,ts}"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "nodemon": "^3.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+EOF
+        
+        cat > src/index.js << EOF
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+    res.json({ message: 'Hello from $PROJECT_NAME!' });
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy' });
+});
+
+app.listen(PORT, () => {
+    console.log(\`$PROJECT_NAME server running on port \${PORT}\`);
+});
+EOF
+        ;;
+        
+    *)
+        mkdir -p src tests config docs scripts
+        cat > README.md << EOF
+# $PROJECT_NAME
+
+## Setup
+
+1. Install dependencies
+2. Configure environment
+3. Run the application
+
+## Development
+
+Add development instructions here.
+
+## Testing
+
+Add testing instructions here.
+EOF
+        ;;
+esac
+
+# Create README if it doesn't exist
+if [[ ! -f README.md ]]; then
+    cat > README.md << EOF
+# $PROJECT_NAME
+
+## OpenCode Configuration
+
+This project is configured with OpenCode for enhanced development experience.
+
+### Local Configuration
+
+- **Stack**: See \`.opencode/context/stack.md\`
+- **Patterns**: See \`.opencode/context/patterns.md\`
+- **Project Context**: See \`.opencode/context/project.md\`
+
+### Global Configuration
+
+Global OpenCode standards are automatically loaded from \`~/.opencode/\`.
+
+## Setup
+
+[Add setup instructions here]
+
+## Development
+
+[Add development instructions here]
+
+## Testing
+
+[Add testing instructions here]
+EOF
+fi
+
+print_header "Setup Complete!"
+print_status "Project created at: $PROJECT_DIR"
+print_status "OpenCode configuration: ✅"
+print_status ".gitignore with .opencode/: ✅"
+
+echo
+print_header "Next Steps"
+echo "1. cd $PROJECT_DIR"
+echo "2. Customize .opencode/context/*.md files"
+echo "3. Update README.md with project details"
+echo "4. Initialize git repository: git init"
+echo "5. Start developing!"
+
+echo
+print_warning "Remember to customize the template placeholders in .opencode/context/ files"
+print_status "Happy coding! 🚀"

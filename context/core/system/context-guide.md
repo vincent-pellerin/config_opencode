@@ -18,6 +18,12 @@
 
 Context files provide guidelines and templates for specific tasks. Use the index system for efficient discovery and lazy loading to keep prompts lean.
 
+**CRITICAL: Global Configuration Precedence**
+- `~/.opencode/` (global config) **ALWAYS** takes precedence over local project configs
+- Local `.opencode/` directories are **NEVER** committed to Git (must be in .gitignore)
+- Global standards and workflows cannot be overridden by local configurations
+- Local configs only add project-specific context, not replace global rules
+
 ## Context Index System
 
 **Central Index**: `.opencode/context/index.md` - Ultra-compact map of all contexts
