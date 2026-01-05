@@ -28,6 +28,8 @@
 - `core/system/context-guide.md` - Context system usage [critical]
 - `core/system/validation-checklist.md` - Structure validation checklist [critical]
 - `core/system/validation-protocol.md` - Integrated validation workflow [critical]
+- `core/system/sync-protocol.md` - Configuration synchronization system [high]
+- `core/system/auto-sync-hooks.md` - Automatic sync triggers [medium]
 
 ### Global Context
 - `global/environments.md` - Environment configurations
@@ -83,6 +85,11 @@
 **Triggers**: validate, structure, standards, compliance, file creation
 **Load**: `core/system/validation-checklist.md`, `core/system/validation-protocol.md`
 **Tool**: `~/.opencode/bin/validate-structure`
+
+### Configuration Synchronization
+**Triggers**: sync, backup, config sync, version control
+**Load**: `core/system/sync-protocol.md`, `core/system/auto-sync-hooks.md`
+**Tool**: `~/.opencode/bin/sync-config`
 
 ## Usage Patterns
 
