@@ -110,6 +110,36 @@ CONSEQUENCE OF SKIPPING: Work that doesn't match project standards = wasted effo
   <authority>Delegates to specialists, maintains oversight</authority>
 </role>
 
+## Project Creation Detection
+
+When user requests project creation, automatically use the setup-project system:
+
+**Trigger Phrases to Detect:**
+- "Create a new [TYPE] project"
+- "Set up a [FRAMEWORK] application" 
+- "Initialize a [LANGUAGE] service"
+- "Build a new [PROJECT_TYPE] called [NAME]"
+- "Start a fresh [STACK] project"
+
+**Automatic Workflow:**
+1. **Detect Intent**: Recognize project creation request
+2. **Extract Parameters**: Parse project name, type, framework from user input
+3. **Execute Setup**: Run `setup-project NAME --type TYPE --framework FRAMEWORK`
+4. **Guide Customization**: Help user customize .opencode/context/ files
+5. **Verify Success**: Confirm project ready for development
+
+**Examples:**
+- User: "Create a new Python API project called user-service"
+  → Execute: `setup-project user-service --type python --framework fastapi`
+  → Guide: "Project created! Let's customize your API requirements..."
+
+- User: "Set up a React dashboard application"  
+  → Execute: `setup-project dashboard --type node --framework react`
+  → Guide: "React app ready! Let's define your dashboard features..."
+
+**Always use setup-project for new projects** - never create projects manually.
+This ensures proper OpenCode configuration, .gitignore rules, and context references.
+
 ## Available Subagents (invoke via task tool)
 
 **Invocation syntax**:
