@@ -210,9 +210,31 @@ task(
   </stage>
 
   <stage id="3" name="Execute" when="approved">
-    <prerequisites>User approval received (Stage 2 complete)</prerequisites>
-    
-    <step id="3.1" name="LoadContext" required="true" enforce="@critical_context_requirement">
+     <prerequisites>User approval received (Stage 2 complete)</prerequisites>
+     
+     <step id="3.0" name="LanguageSelection" when="code_task" required="true">
+       ⛔ STOP. For coding tasks, determine optimal programming language:
+       
+       1. Check if task involves code implementation (writing/editing code files)
+       2. If YES: Delegate to language-selector subagent for automatic selection
+          task(
+            subagent_type="language-selector",
+            description="Select optimal language",
+            prompt="Analyze this request and recommend Python vs Go based on task characteristics and project context: {user_request}"
+          )
+       3. Apply language selection to subsequent planning and execution
+       4. Load language-specific standards and patterns
+       5. Configure development environment for selected language
+       
+       <language_override>
+         Check for manual override: FORCE_LANGUAGE=python|go in context
+         If present, skip automatic selection and use specified language
+       </language_override>
+       
+       <checkpoint>Language selected (or confirmed not needed for non-code tasks)</checkpoint>
+     </step>
+     
+     <step id="3.1" name="LoadContext" required="true" enforce="@critical_context_requirement">
       ⛔ STOP. Before executing, check task type:
       
       1. Classify task: docs|code|tests|delegate|review|patterns|bash-only
@@ -291,6 +313,46 @@ task(
     Ask: "Complete & satisfactory?"
     <if_session>Also ask: "Cleanup temp session files at .tmp/sessions/{id}/?"</if_session>
     <cleanup_on_confirm>Remove ctx files→Update manifest→Delete session folder</cleanup_on_confirm>
+  </stage>
+
+  <stage id="6.2" name="AutoSync" when="structural_changes" required="false">
+    <prerequisites>Task completed (Stage 6 complete), structural changes detected</prerequisites>
+    <trigger_condition>
+      Structural changes include:
+      - New/modified context files (context/**/*.md)
+      - New/modified tools or scripts (bin/*, tool/*, plugin/*, command/*)
+      - New/modified agent definitions (agent/**/*.md)
+      - New/modified templates (templates/**/*)
+    </trigger_condition>
+    <process>
+      1. Detect structural changes:
+         - Check if task created/modified files in: context/, bin/, tool/, plugin/, command/, agent/, templates/
+         - Exclude: .tmp/, .env, node_modules/, .git/, *.log
+
+      2. IF structural changes detected:
+         a. Execute sync automatically:
+            task(
+              subagent_type="sync-config",
+              description="Auto-sync after task completion",
+              prompt="Execute automatic sync with options: --auto --reason \"{brief change description}\"\n\nTask that triggered sync: {task_description}\nFiles changed: {list_files_changed}"
+            )
+
+      3. Report sync status:
+         - Success: "Configuration synced to backup"
+         - Failed: "Sync failed - manual intervention required"
+         - No changes: "No structural changes, sync skipped"
+    </process>
+    <outputs>
+      <sync_triggered>Boolean indicating if sync was executed</sync_triggered>
+      <sync_status>Success/Failed/Skipped</sync_status>
+      <sync_message>Human-readable sync result</sync_message>
+    </outputs>
+    <checkpoint>Auto-sync completed or skipped</checkpoint>
+    <note>
+      This stage runs automatically after Stage 6 for tasks that modify OpenCode structure.
+      It ensures the backup repository stays current without manual intervention.
+      Use @sync-config or /sync for manual sync when needed.
+    </note>
   </stage>
 </workflow>
 
