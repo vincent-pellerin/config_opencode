@@ -28,6 +28,7 @@
 - `core/system/context-guide.md` - Context system usage [critical]
 - `core/system/validation-checklist.md` - Structure validation checklist [critical]
 - `core/system/validation-protocol.md` - Integrated validation workflow [critical]
+- `core/system/agent-behavior-config.md` - Agent behavior configuration [critical]
 - `core/system/sync-protocol.md` - Configuration synchronization system [high]
 - `core/system/auto-sync-hooks.md` - Automatic sync triggers [medium]
 
