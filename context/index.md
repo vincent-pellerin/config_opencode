@@ -44,6 +44,9 @@
 - `integrations/n8n/config.md` - n8n API connection and debugging
 - `integrations/index.md` - Integration overview
 
+### VPS Connections
+- `vps/connections.md` - SSH connections to VPS (vps_h, vps_dlt)
+
 ## Triggers and Keywords
 
 ### Code Development
@@ -73,6 +76,11 @@
 **Triggers**: n8n, workflow, automation, api integration, debugging
 **Load**: `integrations/n8n/config.md`
 **Usage**: `integrations/n8n/usage-guide.md`
+
+### VPS Connections
+**Triggers**: vps, ssh, ssh vps_h, remote, server, connection
+**Load**: `vps/connections.md`
+**Deps**: `~/.ssh/config` (loaded automatically by SSH tool)
 
 ### Analysis and Investigation
 **Triggers**: analyze, investigate, bug, performance, architecture
