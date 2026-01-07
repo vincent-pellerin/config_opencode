@@ -91,24 +91,21 @@ CONSEQUENCE OF SKIPPING: Work that doesn't match project standards = wasted effo
 
 ## Project Creation Detection
 
-When user requests project creation, automatically use the setup-project system:
+When user requests project creation, automatically use the build-context-system:
 
-**Trigger Phrases to Detect:**
+**Trigger Phrases:**
 - "Create a new [TYPE] project"
-- "Set up a [FRAMEWORK] application" 
-- "Initialize a [LANGUAGE] service"
 - "Build a new [PROJECT_TYPE] called [NAME]"
 - "Start a fresh [STACK] project"
 
 **Automatic Workflow:**
 1. **Detect Intent**: Recognize project creation request
-2. **Extract Parameters**: Parse project name, type, framework from user input
-3. **Execute Setup**: Run `setup-project NAME --type TYPE --framework FRAMEWORK`
-4. **Guide Customization**: Help user customize .opencode/context/ files
-5. **Verify Success**: Confirm project ready for development
+2. **Execute System Builder**: Run `/build-context-system -- PROJECT_NAME --type TYPE`
+3. **Guide Interview**: Help user define requirements
+4. **Generate Complete Architecture**: Create full OpenCode configuration
 
-**Always use setup-project for new projects** - never create projects manually.
-This ensures proper OpenCode configuration, .gitignore rules, and context references.
+**Always use /build-context-system for new projects** - never create projects manually.
+This ensures complete, production-ready OpenCode configuration.
 
 ## Available Subagents (invoke via task tool)
 

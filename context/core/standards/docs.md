@@ -1,4 +1,4 @@
-<!-- Context: standards/docs | Priority: critical | Version: 2.0 | Updated: 2025-01-21 -->
+<!-- Context: standards/docs | Priority: critical | Version: 2.1 | Updated: 2025-01-07 -->
 
 # Documentation Standards
 
@@ -75,6 +75,26 @@ function calculateTotal(price, taxRate) {
   return price * (1 + taxRate);
 }
 ```
+
+## File Location
+
+**Tous les fichiers Markdown (*.md) doivent être créés dans:**
+```
+~/dev/[projet]/docs/
+```
+
+**Exemples:**
+| Projet | Chemin |
+|--------|--------|
+| immo-stras | ~/dev/immo-stras/docs/ |
+| scraping | ~/dev/scraping/docs/ |
+| ga4-analytics | ~/dev/ga4-analytics/docs/ |
+| dlthub-unified | ~/dev/dlthub-unified/docs/ |
+| obsidian-sync | ~/dev/obsidian-sync/docs/ |
+
+**Rationale:** Centralisation de la documentation au même niveau que le code source, facilitation de la découvrabilité.
+
+---
 
 ## What to Document
 

@@ -112,11 +112,11 @@ CONSEQUENCE OF SKIPPING: Work that doesn't match project standards = wasted effo
 
 ## Project Creation Detection
 
-When user requests project creation, automatically use the setup-project system:
+When user requests project creation, automatically use the build-context-system:
 
-**Trigger Phrases to Detect:**
+**Trigger Phrases:**
 - "Create a new [TYPE] project"
-- "Set up a [FRAMEWORK] application" 
+- "Set up a [FRAMEWORK] application"
 - "Initialize a [LANGUAGE] service"
 - "Build a new [PROJECT_TYPE] called [NAME]"
 - "Start a fresh [STACK] project"
@@ -124,21 +124,27 @@ When user requests project creation, automatically use the setup-project system:
 **Automatic Workflow:**
 1. **Detect Intent**: Recognize project creation request
 2. **Extract Parameters**: Parse project name, type, framework from user input
-3. **Execute Setup**: Run `setup-project NAME --type TYPE --framework FRAMEWORK`
-4. **Guide Customization**: Help user customize .opencode/context/ files
-5. **Verify Success**: Confirm project ready for development
+   - `--type`: Language/project type (python, node, go, rust, generic)
+   - `--framework`: Specific framework (fastapi, react, gin, etc.)
+3. **Execute System Builder**: Run `/build-context-system -- PROJECT_NAME --type TYPE [--framework FRAMEWORK]`
+4. **Guide Interview**: Help user define requirements
+5. **Generate Complete Architecture**: Create full OpenCode configuration
 
 **Examples:**
 - User: "Create a new Python API project called user-service"
-  → Execute: `setup-project user-service --type python --framework fastapi`
-  → Guide: "Project created! Let's customize your API requirements..."
+  → Execute: `opencode --command build-context-system -- user-service --type python`
+  → Guide: "I'll help you design your user-service architecture..."
 
-- User: "Set up a React dashboard application"  
-  → Execute: `setup-project dashboard --type node --framework react`
-  → Guide: "React app ready! Let's define your dashboard features..."
+- User: "Set up a React dashboard application"
+  → Execute: `opencode --command build-context-system -- dashboard --type node --framework react`
+  → Guide: "Let's customize your dashboard requirements..."
 
-**Always use setup-project for new projects** - never create projects manually.
-This ensures proper OpenCode configuration, .gitignore rules, and context references.
+**Always use /build-context-system for new projects** - never create projects manually.
+This ensures complete, production-ready OpenCode configuration with:
+- Custom agents and subagents
+- Project-specific workflows
+- Domain-specific context files
+- Custom commands and templates
 
 ## Available Subagents (invoke via task tool)
 

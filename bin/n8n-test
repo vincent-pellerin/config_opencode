@@ -1,0 +1,76 @@
+#!/bin/bash
+# n8n Connection Test - OpenCode Integration
+# Usage: n8n-test
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Load environment variables from global .env file
+if [ -f "$HOME/.opencode/.env" ]; then
+    # Export variables from .env file
+    set -a
+    source "$HOME/.opencode/.env"
+    set +a
+fi
+
+# Load configuration from context (with fallback values)
+N8N_BASE_URL="${N8N_BASE_URL:-https://n8n.vpdata.fr}"
+N8N_API_URL="${N8N_API_URL:-https://n8n.vpdata.fr/api/v1}"
+
+echo -e "${BLUE}🔍 n8n Configuration Test${NC}"
+echo "=========================="
+
+# Test 1: Instance Accessibility
+echo -e "\n${YELLOW}1. Testing instance accessibility...${NC}"
+if curl -s -I "$N8N_BASE_URL" --connect-timeout 10 | grep -q "200"; then
+    echo -e "${GREEN}✅ Instance accessible${NC}"
+else
+    echo -e "${RED}❌ Instance not accessible${NC}"
+    exit 1
+fi
+
+# Test 2: Health Check
+echo -e "\n${YELLOW}2. Testing health endpoint...${NC}"
+health_response=$(curl -s "$N8N_BASE_URL/healthz")
+if echo "$health_response" | grep -q '"status":"ok"'; then
+    echo -e "${GREEN}✅ Health check passed${NC}"
+else
+    echo -e "${RED}❌ Health check failed${NC}"
+    echo "   Response: $health_response"
+fi
+
+# Test 3: API Key Check
+echo -e "\n${YELLOW}3. Testing API key...${NC}"
+if [ -n "$N8N_API_KEY" ]; then
+    api_response=$(curl -s -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/workflows")
+    if echo "$api_response" | grep -q '"data"'; then
+        workflow_count=$(echo "$api_response" | jq '.data | length' 2>/dev/null || echo "unknown")
+        echo -e "${GREEN}✅ API key valid${NC}"
+        echo -e "${BLUE}📊 Found $workflow_count workflows${NC}"
+    else
+        echo -e "${RED}❌ API key invalid/expired${NC}"
+        echo -e "${YELLOW}💡 Generate new key: Settings > n8n API${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  N8N_API_KEY not set${NC}"
+fi
+
+# Test 4: Environment Variables
+echo -e "\n${YELLOW}4. Environment check...${NC}"
+env_vars=("N8N_BASE_URL" "N8N_API_URL" "N8N_API_KEY")
+for var in "${env_vars[@]}"; do
+    if [ -n "${!var}" ]; then
+        echo -e "   ${GREEN}✅ $var${NC}"
+    else
+        echo -e "   ${YELLOW}⚠️  $var not set${NC}"
+    fi
+done
+
+echo -e "\n${GREEN}🎉 Test completed!${NC}"
+echo -e "\n${BLUE}💡 Load config: @~/.opencode/context/integrations/n8n/config.md${NC}"

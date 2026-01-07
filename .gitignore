@@ -1,26 +1,4 @@
-# OpenCode executables
-bin/
-
-# Node.js dependencies  
-node_modules/
-
-# Environment files
-.env
-.env.local
-
-# Lock files
-*.lock
-package-lock.json
+node_modules
+package.json
 bun.lock
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-
-# Installation logs
-setup/*.log
-.env
+.gitignore

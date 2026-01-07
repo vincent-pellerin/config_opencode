@@ -1,0 +1,219 @@
+#!/bin/bash
+# validate-docs-location: Verify and fix *.md file locations
+# All markdown files must be in ~/dev/[projet]/docs/
+#
+# Usage: validate-docs-location [--fix] [project]
+#   --fix    Auto-move mislocated files
+#   project  Specific project to check (default: all)
+
+set -e
+
+AUTO_FIX=false
+PROJECT=""
+DRY_RUN=true
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --fix)
+            AUTO_FIX=true
+            DRY_RUN=false
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            PROJECT="$1"
+            shift
+            ;;
+    esac
+done
+
+echo "🔍 Documentation Location Validator"
+echo "===================================="
+echo "Mode: $([ "$DRY_RUN" = true ] && echo "DRY RUN" || echo "AUTO FIX")"
+echo ""
+
+# Directories to exclude from file location check
+EXCLUDE_DIRS=(
+    "qmk"
+    "config_opencode"
+    "portfolio"
+    "Obsidian"
+    "upgrade_language_setup"
+)
+
+# Directory patterns to exclude (files inside these paths won't be moved)
+EXCLUDE_PATTERNS=(
+    ".opencode/"
+    ".claude/"
+    ".github/"
+    "dbt_packages/"
+    "node_modules/"
+)
+
+# Files at root level (not in a project) that should NOT be moved
+ROOT_FILES=(
+    "AGENTS.md"
+    "CLAUDE.md"
+    "GUIDE_UTILISATEUR_CLAUDE_MD.md"
+    "PROJECTS_STATUS.md"
+    "langages_pour_agents_multi_taches.md"
+    "session-ses_4c7a_telegram_bot_setup.md"
+    "youtube_membership_research_report.md"
+    "youtube_membership_research_todos.md"
+)
+
+# Check if a path should be excluded
+should_exclude_path() {
+    local path="$1"
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        if [[ "$path" == *"$pattern"* ]]; then
+            return 0  # Exclude
+        fi
+    done
+    return 1  # Don't exclude
+}
+
+# Check if a directory should be excluded
+should_exclude() {
+    local dir="$1"
+    for exclude in "${EXCLUDE_DIRS[@]}"; do
+        if [[ "$dir" == "$exclude" ]]; then
+            return 0  # Exclude
+        fi
+    done
+    return 1  # Don't exclude
+}
+
+# Check if a file is a root-level file
+is_root_file() {
+    local filename="$1"
+    for root in "${ROOT_FILES[@]}"; do
+        if [[ "$filename" == "$root" ]]; then
+            return 0  # Is root file
+        fi
+    done
+    return 1  # Not root file
+}
+
+# Find all *.md files not in docs/ directory (excluding .git, .venv, node_modules)
+if [[ -n "$PROJECT" ]]; then
+    echo "📁 Checking project: $PROJECT"
+    # Single project mode - skip exclusion check
+    MD_FILES=$(find ~/dev/$PROJECT -name "*.md" \
+        ! -path "*/.git/*" \
+        ! -path "*/docs/*" \
+        ! -path "*/.venv/*" \
+        ! -path "*/node_modules/*" \
+        ! -path "*/__pycache__/*" \
+        2>/dev/null || echo "")
+else
+    echo "📁 Checking all projects in ~/dev/"
+    echo "Excluded dirs: ${EXCLUDE_DIRS[*]}"
+    echo "Excluded patterns: ${EXCLUDE_PATTERNS[*]}"
+    echo ""
+    
+    # Build find command with exclusion logic
+    MD_FILES=""
+    for dir in ~/dev/*/; do
+        project=$(basename "$dir")
+        if should_exclude "$project"; then
+            continue
+        fi
+        
+        found=$(find "$dir" -name "*.md" \
+            ! -path "*/.git/*" \
+            ! -path "*/docs/*" \
+            ! -path "*/.venv/*" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/__pycache__/*" \
+            2>/dev/null || echo "")
+        
+        MD_FILES="$MD_FILES$found"$'\n'
+    done
+fi
+
+if [[ -z "$MD_FILES" ]]; then
+    echo "✅ All markdown files are properly located in docs/ directories!"
+    exit 0
+fi
+
+echo ""
+echo "⚠️  Found mislocated markdown files:"
+echo "------------------------------------"
+
+declare -A MOVES
+while IFS= read -r file; do
+    [[ -z "$file" ]] && continue
+    
+    # Skip files in excluded directory patterns
+    if should_exclude_path "$file"; then
+        continue
+    fi
+    
+    # Get the filename
+    filename=$(basename "$file")
+    
+    # Skip README files (case-insensitive) - these stay at root
+    if [[ "$(echo "$filename" | tr '[:upper:]' '[:lower:]')" == "readme.md" ]]; then
+        continue
+    fi
+    
+    # Skip LICENSE files
+    if [[ "$filename" == "LICENSE"* ]]; then
+        continue
+    fi
+    
+    # Skip root-level files that aren't in a project directory
+    parent_dir=$(dirname "$file" | sed 's|/home/vincent/dev/||' | cut -d'/' -f1)
+    if [[ -z "$parent_dir" ]] || is_root_file "$filename"; then
+        continue
+    fi
+    
+    # Get project name
+    project=$(echo "$file" | sed 's|/home/vincent/dev/||' | cut -d'/' -f1)
+    
+    # Target location
+    target_dir="~/dev/$project/docs"
+    target_file="$target_dir/$filename"
+    
+    echo "  $file"
+    echo "    → $target_file"
+    echo ""
+    
+    MOVES["$file"]="$target_file"
+done <<< "$MD_FILES"
+
+echo "------------------------------------"
+echo "Total: ${#MOVES[@]} files need to be moved"
+echo ""
+
+if [[ "$DRY_RUN" = true ]]; then
+    echo "💡 Run with --fix to move these files"
+    exit 0
+fi
+
+# Auto-fix mode
+echo "🚀 Moving files..."
+echo ""
+
+for src in "${!MOVES[@]}"; do
+    dest="${MOVES[$src]}"
+    
+    # Create target directory if needed
+    target_dir=$(dirname "$dest")
+    mkdir -p "$target_dir"
+    
+    # Move file
+    if mv "$src" "$dest" 2>/dev/null; then
+        echo "  ✅ $src → $dest"
+    else
+        echo "  ❌ Failed: $src"
+    fi
+done
+
+echo ""
+echo "✅ Done! All files moved to docs/ directories"

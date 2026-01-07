@@ -133,16 +133,50 @@ description: "Interactive system builder that creates complete context-aware AI 
     <action>Begin interactive interview to gather system requirements</action>
     <prerequisites>Merge strategy determined (if existing project) or fresh build confirmed</prerequisites>
     <process>
-      1. Greet user and explain the system building process
-      2. Parse initial domain from $ARGUMENTS if provided
+      1. Parse arguments: PROJECT_NAME, --type LANGUAGE, --framework FRAMEWORK
+      2. Extract domain from arguments or prompt user
       3. Present interview structure (5-6 phases)
       4. Set expectations for output based on merge mode
     </process>
+    <argument_parsing>
+      <syntax>
+        opencode --command build-context-system -- PROJECT_NAME --type TYPE [--framework FRAMEWORK]
+      </syntax>
+      <parameters>
+        <project_name>First positional argument (required)</project_name>
+        <type>
+          <flag>--type</flag>
+          <values>python|node|go|rust|generic</values>
+          <default>generic</default>
+          <description>Programming language or project type</description>
+        </type>
+        <framework>
+          <flag>--framework</flag>
+          <values>fastapi|django|flask|react|express|nextjs|gin|fiber|axum|etc</values>
+          <default>None</default>
+          <description>Specific framework (optional)</description>
+        </framework>
+      </parameters>
+      <examples>
+        opencode --command build-context-system -- my-api --type python
+        opencode --command build-context-system -- my-app --type node --framework react
+        opencode --command build-context-system -- api-service --type go --framework gin
+      </examples>
+    </argument_parsing>
+    <context_output>
+      <language_type>TYPE parsed from --type (e.g., python, node, go, rust, generic)</language_type>
+      <framework>FRAMEWORK parsed from --framework (if provided)</framework>
+      <project_name>PROJECT_NAME from arguments</project_name>
+    </context_output>
     <output_format>
       <for_fresh_build>
         ## Building Your Context-Aware AI System
         
-        I'll guide you through creating a complete .opencode system tailored to your needs.
+        I'll guide you through creating a complete OpenCode system for **$PROJECT_NAME**.
+        
+        **Detected Configuration**:
+        - **Language**: $LANGUAGE_TYPE ${FRAMEWORK:+($FRAMEWORK)}
+        - **Architecture**: Full OpenCode structure
         
         **Process Overview**:
         - Phase 1: Domain & Purpose (2-3 questions)
@@ -154,7 +188,7 @@ description: "Interactive system builder that creates complete context-aware AI 
         **What You'll Get**:
         - Complete .opencode/ folder structure
         - Main orchestrator agent for your domain
-        - 3-5 specialized subagents
+        - 3-5 specialized subagents (adapted to $LANGUAGE_TYPE)
         - Organized context files (domain, processes, standards, templates)
         - 2-3 primary workflows
         - Custom slash commands
@@ -739,12 +773,23 @@ description: "Interactive system builder that creates complete context-aware AI 
         - architecture_summary (generated plan)
         - component_specifications (detailed specs)
         - file_structure_plan (directory layout)
+        - project_metadata:
+            project_name: [from arguments]
+            language_type: [python|node|go|rust|generic from --type]
+            framework: [from --framework if provided]
       </pass_data>
       <expected_return>
         - complete_file_structure (all generated files)
         - validation_report (quality checks)
         - documentation (usage guides)
       </expected_return>
+      <integration>
+        System-builder will generate language-specific context files:
+        - For python: Include @~/.opencode/context/languages/python.md
+        - For node: Include @~/.opencode/context/languages/typescript.md
+        - For go: Include @~/.opencode/context/languages/go.md
+        - For rust: Include @~/.opencode/context/languages/rust.md
+      </integration>
     </route>
     
     <route to="@subagents/system-builder/domain-analyzer" when="domain_unclear_or_complex">
@@ -752,6 +797,7 @@ description: "Interactive system builder that creates complete context-aware AI 
       <pass_data>
         - user_description (domain description)
         - use_cases (initial use cases)
+        - language_type (from --type argument)
       </pass_data>
       <expected_return>
         - domain_analysis (structured domain info)

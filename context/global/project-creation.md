@@ -4,7 +4,7 @@
 
 ### Project Creation Triggers
 
-When users request project creation, automatically use the setup-project system:
+When users request project creation, automatically use the build-context-system:
 
 **Trigger Phrases:**
 - "Create a new [TYPE] project"
@@ -25,17 +25,87 @@ When users request project creation, automatically use the setup-project system:
 # When OpenCode detects project creation intent:
 # 1. Parse project requirements from user input
 # 2. Determine project type and framework
-# 3. Execute setup-project automatically
-# 4. Guide user through customization
+# 3. Execute build-context-system automatically
+# 4. Guide user through interactive interview
 
 # Example flow:
 User: "Create a new Python API project called user-service"
 OpenCode: 
   → Detects: project creation intent
-  → Extracts: name="user-service", type="python", framework="api"
-  → Executes: setup-project user-service --type python --framework fastapi
-  → Guides: "Project created! Let's customize your contexts..."
+  → Extracts: name="user-service", type="python"
+  → Executes: opencode --command build-context-system -- user-service --type python
+  → Starts: Interactive interview for architecture customization
 ```
+
+### Integration Commands
+
+**Primary Command Pattern:**
+```bash
+opencode --command build-context-system -- PROJECT_NAME --type TYPE
+```
+
+**Supported Variations:**
+- `opencode --command build-context-system -- my-api --type python`
+- `opencode --command build-context-system -- my-app --type node`
+- `opencode --command build-context-system -- my-service --type go --framework gin`
+
+### Automatic Framework Detection
+
+| User Input | Detected Type | Default Framework |
+|------------|---------------|-------------------|
+| "Python API" | python | fastapi |
+| "React app" | node | react |
+| "Express server" | node | express |
+| "Go service" | go | gin |
+| "Rust CLI" | rust | clap |
+| "Django app" | python | django |
+| "Next.js app" | node | nextjs |
+
+### Post-Creation Workflow
+
+After automatic build-context-system execution:
+
+1. **Interactive Interview**
+   ```
+   🎯 Welcome to the System Builder!
+   
+   I'll help you create a complete OpenCode architecture for your project.
+   
+   Phase 1: Domain & Purpose
+   - What is your primary domain or industry?
+   - What is the primary purpose of this system?
+   - Who are the primary users?
+   ```
+
+2. **Architecture Generation**
+   ```
+   📐 Generating your custom architecture...
+   
+   Created:
+   ├── .opencode/agent/
+   │   ├── my-api-orchestrator.md
+   │   └── subagents/
+   ├── .opencode/command/
+   ├── .opencode/context/
+   │   ├── domain/
+   │   ├── processes/
+   │   ├── standards/
+   │   └── templates/
+   └── .opencode/workflows/
+   ```
+
+3. **Confirm Ready**
+   ```
+   ✅ Your context-aware AI system is ready!
+   
+   📁 Location: ~/dev/my-api
+   🎯 Quick Start: cd ~/dev/my-api
+   
+   Next steps:
+   1. Test the orchestrator with a simple request
+   2. Customize context files with your domain knowledge
+   3. Add your specific workflows and patterns
+   ```
 
 ### Integration Commands
 
@@ -99,24 +169,50 @@ After automatic setup-project execution:
 ✅ Suggested: 'my-project' or 'my_project'
 ```
 
-**Existing Directories:**
+**Unknown Type:**
+```
+❓ Unknown project type 'obscure-type'
+Available options:
+- python, node, go, rust, generic
+Use --type to specify
+```
+
+**Existing Directory:**
 ```
 ⚠️ Directory ~/dev/user-service already exists
 Options:
-1. Use different name
-2. Continue anyway (merge)
-3. Backup existing and recreate
+1. Choose different name
+2. Use --merge to extend existing
+3. Use --replace to backup and recreate
 ```
 
-**Unknown Stack:**
+### Integration Examples
+
+**Example 1: Simple API**
 ```
-❓ I don't recognize 'obscure-framework'
-Available options:
-- Python: fastapi, django, flask
-- Node.js: express, react, nextjs
-- Go: gin, echo, fiber
-- Or specify --type generic for custom setup
+User: "Create a Python API for user management"
+OpenCode: 
+  → opencode --command build-context-system -- user-api --type python
+  → Interview: "What domain? What's the primary purpose?"
+  → Generates complete architecture with user-management context
 ```
+
+**Example 2: Full Stack App**
+```
+User: "Build a React dashboard with Express backend"
+OpenCode:
+  → opencode --command build-context-system -- dashboard-frontend --type node --framework react
+  → Interactive interview for frontend architecture
+  → Creates both frontend and backend architectures
+```
+
+**Example 3: Data Pipeline**
+```
+User: "Create a data processing pipeline in Python"
+OpenCode:
+  → opencode --command build-context-system -- data-pipeline --type python
+  → Interview: "What data sources? What transformations?"
+  → Generates pipeline-specific architecture
 
 ## Implementation in Global Context
 
@@ -130,12 +226,12 @@ Add to all primary agents (OpenAgent, OpenCoder):
 When user requests project creation:
 
 1. **Detect Intent**: Look for project creation keywords
-2. **Extract Parameters**: Parse project name, type, framework
-3. **Execute Setup**: Run setup-project command automatically
-4. **Guide Customization**: Help user customize contexts
+2. **Extract Parameters**: Parse project name and type from user input
+3. **Execute System Builder**: Run `/build-context-system -- PROJECT_NAME --type TYPE`
+4. **Guide Interview**: Help user through requirements gathering
 5. **Verify Success**: Confirm project is ready for development
 
-**Always use setup-project for new projects** - never create projects manually.
+**Always use /build-context-system for new projects** - never create projects manually.
 ```
 
 ### Context Loading Priority
@@ -143,9 +239,9 @@ When user requests project creation:
 When working in newly created projects:
 
 1. **Load global contexts** first (as always)
-2. **Load local contexts** from .opencode/context/
-3. **Prompt for customization** if templates not updated
-4. **Guide through first development steps**
+2. **Load local contexts** from .opencode/context/ (created by build-context-system)
+3. **Use custom workflows** defined in .opencode/workflows/
+4. **Execute commands** from .opencode/command/
 
 ### Integration Examples
 
@@ -153,28 +249,27 @@ When working in newly created projects:
 ```
 User: "Create a Python API for user management"
 OpenCode: 
-  → setup-project user-management-api --type python --framework fastapi
-  → "Great! I've created your FastAPI project. Let's define your user management requirements..."
-  → Updates .opencode/context/project.md with user management context
+  → opencode --command build-context-system -- user-api --type python
+  → "Great! Let's design your user management API architecture..."
+  → Updates .opencode/ with complete user-management context
 ```
 
 **Example 2: Full Stack App**
 ```
 User: "Build a React dashboard with Express backend"
 OpenCode:
-  → setup-project dashboard-frontend --type node --framework react
-  → setup-project dashboard-backend --type node --framework express
-  → "I've created both frontend and backend projects. Let's configure their integration..."
+  → opencode --command build-context-system -- dashboard --type node --framework react
+  → "I'll create a complete dashboard architecture..."
+  → Guides through frontend + backend customization
 ```
 
 **Example 3: Data Pipeline**
 ```
 User: "Create a data processing pipeline in Python"
 OpenCode:
-  → setup-project data-pipeline --type python
-  → "Data pipeline project created! Let's define your data sources and processing steps..."
-  → Guides through data pipeline specific context setup
-```
+  → opencode --command build-context-system -- data-pipeline --type python
+  → "Data pipeline architecture coming up!"
+  → Generates pipeline-specific context and workflows
 
 ## Benefits of Automatic Integration
 

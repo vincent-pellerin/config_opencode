@@ -1,3 +1,7 @@
+---
+description: Validate the OpenAgents repository for consistency between CLI, documentation, registry, and components
+---
+
 # Validate Repository
 
 Comprehensive validation command that checks the entire OpenAgents repository for consistency between CLI, documentation, registry, and components.

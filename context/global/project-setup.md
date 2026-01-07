@@ -1,54 +1,59 @@
 # Project Setup Guide
 
-## Automatic Project Setup
+## Using the System Builder
 
 ### Quick Setup Command
 
 ```bash
-# Setup new project with OpenCode configuration
-setup-project PROJECT_NAME --type TYPE --framework FRAMEWORK
+# Create new project with complete OpenCode architecture
+opencode --command build-context-system -- PROJECT_NAME --type TYPE
 ```
 
 ### Supported Project Types
 
 | Type | Languages | Default Framework | Use Case |
 |------|-----------|------------------|----------|
-| `python` | Python 3.12+ | FastAPI | APIs, data processing, ML |
-| `node` | TypeScript/JavaScript | Express | Web apps, APIs, services |
-| `go` | Go | Gin | High-performance services |
-| `rust` | Rust | Axum | System programming, performance |
-| `generic` | Any | None | Custom projects |
+| `python` | Python 3.12+ | - | APIs, data processing, ML |
+| `node` | TypeScript/JavaScript | - | Web apps, APIs, services |
+| `go` | Go | - | High-performance services |
+| `rust` | Rust | - | System programming, performance |
+| `generic` | Any | - | Custom projects |
 
 ### Examples
 
 ```bash
 # Python API project
-setup-project my-api --type python --framework fastapi
+opencode --command build-context-system -- my-api --type python
 
-# React web app
-setup-project my-app --type node --framework react
+# Node.js web app
+opencode --command build-context-system -- my-app --type node
 
 # Data processing pipeline
-setup-project data-pipeline --type python
+opencode --command build-context-system -- data-pipeline --type python
 
-# Custom directory
-setup-project my-project --directory /custom/path
+# Go service
+opencode --command build-context-system -- my-service --type go
 
 # Generic project
-setup-project my-tool --type generic
+opencode --command build-context-system -- my-tool --type generic
 ```
 
 ## What Gets Created
 
 ### Project Structure
+
 ```
 PROJECT_NAME/
 ├── .gitignore              # ✅ .opencode/ automatically ignored
-├── .opencode/              # ✅ Local OpenCode configuration
-│   └── context/
-│       ├── stack.md        # Technology stack
-│       ├── patterns.md     # Business patterns
-│       └── project.md      # Project context
+├── .opencode/              # ✅ Complete OpenCode configuration
+│   ├── agent/              # Custom agents and subagents
+│   ├── command/            # Custom slash commands
+│   ├── context/            # Domain-specific contexts
+│   │   ├── domain/         # Domain concepts and terminology
+│   │   ├── processes/      # Workflow documentation
+│   │   ├── standards/      # Quality criteria
+│   │   └── templates/      # Output formats and patterns
+│   └── workflows/          # Workflow definitions
 ├── src/                    # Source code
 ├── tests/                  # Test suites
 ├── config/                 # Configuration files
@@ -66,9 +71,11 @@ Every local config automatically references global contexts:
 - `@~/.opencode/context/global/environments.md` - Environment configuration
 
 #### Local Contexts (Project-Specific)
-- **stack.md**: Technology stack, libraries, commands
-- **patterns.md**: Business logic patterns, workflows
-- **project.md**: Mission, objectives, stakeholders
+The system builder creates:
+- **domain/**: Domain concepts, terminology, business rules
+- **processes/**: Step-by-step procedures, workflows
+- **standards/**: Quality criteria, validation rules, error handling
+- **templates/**: Output formats, reusable patterns
 
 ## Configuration Precedence
 
@@ -82,100 +89,29 @@ Every local config automatically references global contexts:
 - Complements global configuration
 - **NEVER** committed to Git (automatically in .gitignore)
 
-## Post-Setup Customization
+## What to Expect
 
-### 1. Customize Context Files
-```bash
-cd PROJECT_NAME
-# Edit project-specific contexts
-vim .opencode/context/stack.md      # Update technology stack
-vim .opencode/context/patterns.md   # Add business patterns
-vim .opencode/context/project.md    # Define project mission
-```
+### Interactive Interview
+The system builder will ask you:
+1. **Domain & Purpose**: What is your industry? What's the system purpose?
+2. **Use Cases**: What tasks should the system handle?
+3. **Complexity**: How many specialized agents? What integrations?
+4. **Review**: Confirm the architecture before generation
 
-### 2. Replace Template Placeholders
-Look for and replace these markers:
-- `[TODO: CUSTOMIZE]` - Generic placeholders
-- `[DESCRIBE_ARCHITECTURE]` - System architecture
-- `[DEFINE_PROJECT_MISSION]` - Project mission statement
-- `[OBJECTIVE_1]` - Business objectives
+### Generated Files
 
-### 3. Initialize Git Repository
-```bash
-git init
-git add .
-git commit -m "feat: initial project setup with OpenCode configuration"
-```
-
-## Language-Specific Setup
-
-### Python Projects
-```bash
-setup-project my-api --type python --framework fastapi
-cd my-api
-
-# Install dependencies
-uv sync
-
-# Run development server
-uv run python src/main.py
-```
-
-**Created files:**
-- `pyproject.toml` - Modern Python configuration
-- `requirements.txt` - Dependencies
-- `src/main.py` - FastAPI application
-- Pre-configured: Black, isort, Ruff, mypy
-
-### Node.js Projects
-```bash
-setup-project my-app --type node --framework express
-cd my-app
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-```
-
-**Created files:**
-- `package.json` - Node.js configuration
-- `src/index.js` - Express application
-- Pre-configured: ESLint, Prettier, Jest
-
-### Go Projects
-```bash
-setup-project my-service --type go --framework gin
-cd my-service
-
-# Initialize Go module
-go mod init my-service
-
-# Install dependencies
-go mod tidy
-
-# Run application
-go run main.go
-```
-
-### Rust Projects
-```bash
-setup-project my-tool --type rust --framework axum
-cd my-tool
-
-# Build project
-cargo build
-
-# Run application
-cargo run
-```
+| Category | Files | Description |
+|----------|-------|-------------|
+| Agents | 3-5 files | Orchestrator + subagents tailored to your domain |
+| Commands | 2-3 files | Custom slash commands for common operations |
+| Context | 6-10 files | Domain knowledge, processes, standards, templates |
+| Workflows | 2-5 files | Defined workflows with stages and criteria |
 
 ## Best Practices
 
 ### ✅ Do This
-- Use `setup-project` for all new projects
-- Customize `.opencode/context/` files after setup
+- Use `/build-context-system` for all new projects
+- Customize generated contexts after creation
 - Keep global config in `~/.opencode/` updated
 - Reference global contexts in local configs
 - Add `.opencode/` to `.gitignore` (automatic)
@@ -183,29 +119,33 @@ cargo run
 ### ❌ Don't Do This
 - Don't commit `.opencode/` directories to Git
 - Don't override global standards in local configs
-- Don't skip customizing template placeholders
-- Don't create projects without OpenCode setup
+- Don't create projects without using the system builder
+- Don't skip the interactive interview - it's quick and valuable!
 
 ## Troubleshooting
 
-### Script Not Found
+### Command Not Found
 ```bash
-# Add OpenCode bin to PATH
-echo 'export PATH=$HOME/.opencode/bin:$PATH' >> ~/.zshrc
-source ~/.zshrc
+# Verify build-context-system is installed
+ls ~/.opencode/command/build-context-system.md
+
+# If missing, reinstall OpenCode agents
+# Check OpenCode CLI installation
 ```
 
-### Permission Denied
+### Permission Issues
 ```bash
-# Make script executable
-chmod +x ~/.opencode/bin/setup-project
+# Verify OpenCode is properly configured
+opencode --help
+
+# Reinstall if needed
 ```
 
-### Template Issues
-```bash
-# Verify templates exist
-ls -la ~/.opencode/templates/project/
-```
+### Interview Questions
+The interview is quick (3-5 minutes). Answer honestly for best results:
+- Be specific about your domain
+- List your actual use cases
+- Don't overcomplicate - start simple
 
 ## Integration with Existing Projects
 
@@ -213,47 +153,15 @@ ls -la ~/.opencode/templates/project/
 ```bash
 cd existing-project
 
-# Copy OpenCode configuration
-mkdir -p .opencode/context
-cp ~/.opencode/templates/project/.opencode/context/* .opencode/context/
-
-# Add to .gitignore
-echo ".opencode/" >> .gitignore
-
-# Customize contexts
-vim .opencode/context/stack.md
+# Run system builder in existing directory
+opencode --command build-context-system -- $(basename "$(pwd)") --type python
 ```
 
 ### Migrate from Manual Setup
 If you have manually created `.opencode/` configs:
 1. Backup existing configs
-2. Run `setup-project` in temporary directory
+2. Run system builder with same project name
 3. Compare and merge configurations
 4. Update references to global contexts
-
-## Advanced Usage
-
-### Custom Templates
-Create project-specific templates in `~/.opencode/templates/`:
-```bash
-mkdir -p ~/.opencode/templates/my-template
-# Add custom template files
-```
-
-### Batch Setup
-```bash
-# Setup multiple related projects
-for project in api frontend mobile; do
-    setup-project my-app-$project --type node
-done
-```
-
-### CI/CD Integration
-```yaml
-# .github/workflows/setup.yml
-- name: Setup OpenCode
-  run: |
-    setup-project ${{ github.event.repository.name }} --type python
-```
 
 This automated setup ensures every new project follows OpenCode standards and has proper configuration precedence.

@@ -1,0 +1,541 @@
+#!/bin/bash
+# OpenCode Configuration Synchronization Tool
+# Syncs ~/.opencode/ to /home/vincent/dev/config_opencode/
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Configuration
+OPENCODE_SOURCE="$HOME/.opencode"
+OPENCODE_BACKUP="/home/vincent/dev/config_opencode"
+SYNC_LOG="$HOME/.opencode/.tmp/sync.log"
+DRY_RUN=false
+PUSH_TO_GITHUB=false
+CONTEXT_ONLY=false
+TOOLS_ONLY=false
+FORCE_SYNC=false
+INCLUDE_PATTERN=""
+
+# Ensure log directory exists
+mkdir -p "$(dirname "$SYNC_LOG")"
+
+# Logging function
+log() {
+    local level="$1"
+    local operation="$2"
+    local message="$3"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] [$operation] $message" >> "$SYNC_LOG"
+    
+    case "$level" in
+        "ERROR") echo -e "${RED}❌ $message${NC}" ;;
+        "WARN") echo -e "${YELLOW}⚠️  $message${NC}" ;;
+        "INFO") echo -e "${BLUE}ℹ️  $message${NC}" ;;
+        "SUCCESS") echo -e "${GREEN}✅ $message${NC}" ;;
+    esac
+}
+
+# Help function
+show_help() {
+    cat << EOF
+OpenCode Configuration Sync Tool
+
+USAGE:
+    sync-config [OPTIONS]
+
+OPTIONS:
+    --dry-run           Show what would be synced without making changes
+    --push              Push changes to GitHub after sync
+    --context-only      Sync only context files
+    --tools-only        Sync only tools and scripts
+    --force             Force full resync (overwrite all)
+    --include=PATTERN   Include only files matching pattern
+    --status            Show sync status and last sync info
+    --validate          Validate backup integrity
+    --check             Check sync health
+    --stats             Show sync statistics
+    -h, --help          Show this help message
+
+EXAMPLES:
+    sync-config                    # Basic sync
+    sync-config --dry-run          # Preview changes
+    sync-config --push             # Sync and push to GitHub
+    sync-config --context-only     # Sync only documentation
+    sync-config --status           # Check sync status
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --push)
+            PUSH_TO_GITHUB=true
+            shift
+            ;;
+        --context-only)
+            CONTEXT_ONLY=true
+            shift
+            ;;
+        --tools-only)
+            TOOLS_ONLY=true
+            shift
+            ;;
+        --force)
+            FORCE_SYNC=true
+            shift
+            ;;
+        --include=*)
+            INCLUDE_PATTERN="${1#*=}"
+            shift
+            ;;
+        --status)
+            # Define show_status function inline
+            echo -e "${BLUE}📊 OpenCode Sync Status${NC}"
+            echo "========================"
+            
+            if [ -f "$SYNC_LOG" ]; then
+                echo "Last sync: $(tail -1 "$SYNC_LOG" | cut -d']' -f1 | tr -d '[' 2>/dev/null || echo 'Unknown')"
+                echo "Log entries: $(wc -l < "$SYNC_LOG" 2>/dev/null || echo '0')"
+            else
+                echo "No sync history found"
+            fi
+            
+            if [ -d "$OPENCODE_BACKUP" ]; then
+                echo "Backup location: $OPENCODE_BACKUP"
+                echo "Backup size: $(du -sh "$OPENCODE_BACKUP" 2>/dev/null | cut -f1 || echo 'Unknown')"
+                
+                cd "$OPENCODE_BACKUP"
+                if git rev-parse --git-dir > /dev/null 2>&1; then
+                    echo "Git status: $(git status --porcelain 2>/dev/null | wc -l || echo '0') uncommitted changes"
+                    echo "Last commit: $(git log -1 --format='%h %s' 2>/dev/null || echo 'No commits')"
+                fi
+            else
+                echo "Backup directory not found"
+            fi
+            exit 0
+            ;;
+        --validate)
+            # Inline validate function
+            echo -e "${BLUE}🔍 Validating Backup Integrity${NC}"
+            echo "================================"
+            
+            if [ ! -d "$OPENCODE_BACKUP" ]; then
+                log "ERROR" "VALIDATE" "Backup directory not found: $OPENCODE_BACKUP"
+                exit 1
+            fi
+            
+            if [ -x "$OPENCODE_BACKUP/bin/validate-structure" ]; then
+                cd "$OPENCODE_BACKUP"
+                ./bin/validate-structure
+            else
+                log "WARN" "VALIDATE" "Validation tool not found in backup"
+            fi
+            exit 0
+            ;;
+        --check)
+            # Inline health check
+            echo -e "${BLUE}🏥 Sync Health Check${NC}"
+            echo "===================="
+            
+            health_score=0
+            max_score=5
+            
+            if [ -d "$OPENCODE_SOURCE" ]; then
+                echo -e "${GREEN}✅ Source directory exists${NC}"
+                ((health_score++))
+            else
+                echo -e "${RED}❌ Source directory missing${NC}"
+            fi
+            
+            if [ -d "$OPENCODE_BACKUP" ]; then
+                echo -e "${GREEN}✅ Backup directory exists${NC}"
+                ((health_score++))
+            else
+                echo -e "${RED}❌ Backup directory missing${NC}"
+            fi
+            
+            if [ -d "$OPENCODE_BACKUP/.git" ]; then
+                echo -e "${GREEN}✅ Git repository initialized${NC}"
+                ((health_score++))
+            else
+                echo -e "${YELLOW}⚠️  Git repository not found${NC}"
+            fi
+            
+            if [ -x "$OPENCODE_SOURCE/bin/sync-config" ]; then
+                echo -e "${GREEN}✅ Sync tool available${NC}"
+                ((health_score++))
+            else
+                echo -e "${YELLOW}⚠️  Sync tool not executable${NC}"
+            fi
+            
+            if [ -f "$SYNC_LOG" ] && [ $(find "$SYNC_LOG" -mtime -1 2>/dev/null | wc -l) -gt 0 ]; then
+                echo -e "${GREEN}✅ Recent sync activity detected${NC}"
+                ((health_score++))
+            else
+                echo -e "${YELLOW}⚠️  No recent sync activity${NC}"
+            fi
+            
+            echo -e "\n${BLUE}Health Score: $health_score/$max_score${NC}"
+            exit 0
+            ;;
+        --stats)
+            # Inline stats function
+            echo -e "${BLUE}📈 Sync Statistics${NC}"
+            echo "=================="
+            
+            if [ ! -f "$SYNC_LOG" ]; then
+                echo "No sync history available"
+                exit 0
+            fi
+            
+            echo "Total sync operations: $(grep -c '\[SYNC\]' "$SYNC_LOG" 2>/dev/null || echo '0')"
+            echo "Successful syncs: $(grep -c '\[SUCCESS\].*SYNC' "$SYNC_LOG" 2>/dev/null || echo '0')"
+            echo "Failed syncs: $(grep -c '\[ERROR\].*SYNC' "$SYNC_LOG" 2>/dev/null || echo '0')"
+            
+            if [ -f "$SYNC_LOG" ]; then
+                echo -e "\nRecent activity:"
+                tail -5 "$SYNC_LOG" 2>/dev/null | while read line; do
+                    echo "  $line"
+                done
+            fi
+            exit 0
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Status function
+show_status() {
+    echo -e "${BLUE}📊 OpenCode Sync Status${NC}"
+    echo "========================"
+    
+    if [ -f "$SYNC_LOG" ]; then
+        echo "Last sync: $(tail -1 "$SYNC_LOG" | cut -d']' -f1 | tr -d '[')"
+        echo "Log entries: $(wc -l < "$SYNC_LOG")"
+    else
+        echo "No sync history found"
+    fi
+    
+    if [ -d "$OPENCODE_BACKUP" ]; then
+        echo "Backup location: $OPENCODE_BACKUP"
+        echo "Backup size: $(du -sh "$OPENCODE_BACKUP" | cut -f1)"
+        
+        cd "$OPENCODE_BACKUP"
+        if git rev-parse --git-dir > /dev/null 2>&1; then
+            echo "Git status: $(git status --porcelain | wc -l) uncommitted changes"
+            echo "Last commit: $(git log -1 --format='%h %s' 2>/dev/null || echo 'No commits')"
+        fi
+    else
+        echo "Backup directory not found"
+    fi
+}
+
+# Validation function
+validate_backup() {
+    echo -e "${BLUE}🔍 Validating Backup Integrity${NC}"
+    echo "================================"
+    
+    if [ ! -d "$OPENCODE_BACKUP" ]; then
+        log "ERROR" "VALIDATE" "Backup directory not found: $OPENCODE_BACKUP"
+        exit 1
+    fi
+    
+    # Run structure validation on backup
+    if [ -x "$OPENCODE_BACKUP/bin/validate-structure" ]; then
+        cd "$OPENCODE_BACKUP"
+        ./bin/validate-structure
+    else
+        log "WARN" "VALIDATE" "Validation tool not found in backup"
+    fi
+}
+
+# Health check function
+check_health() {
+    echo -e "${BLUE}🏥 Sync Health Check${NC}"
+    echo "===================="
+    
+    local health_score=0
+    local max_score=5
+    
+    # Check source directory
+    if [ -d "$OPENCODE_SOURCE" ]; then
+        log "SUCCESS" "HEALTH" "Source directory exists"
+        ((health_score++))
+    else
+        log "ERROR" "HEALTH" "Source directory missing"
+    fi
+    
+    # Check backup directory
+    if [ -d "$OPENCODE_BACKUP" ]; then
+        log "SUCCESS" "HEALTH" "Backup directory exists"
+        ((health_score++))
+    else
+        log "ERROR" "HEALTH" "Backup directory missing"
+    fi
+    
+    # Check git repository
+    if [ -d "$OPENCODE_BACKUP/.git" ]; then
+        log "SUCCESS" "HEALTH" "Git repository initialized"
+        ((health_score++))
+    else
+        log "WARN" "HEALTH" "Git repository not found"
+    fi
+    
+    # Check sync tool
+    if [ -x "$OPENCODE_SOURCE/bin/sync-config" ]; then
+        log "SUCCESS" "HEALTH" "Sync tool available"
+        ((health_score++))
+    else
+        log "WARN" "HEALTH" "Sync tool not executable"
+    fi
+    
+    # Check recent sync
+    if [ -f "$SYNC_LOG" ] && [ $(find "$SYNC_LOG" -mtime -1 | wc -l) -gt 0 ]; then
+        log "SUCCESS" "HEALTH" "Recent sync activity detected"
+        ((health_score++))
+    else
+        log "WARN" "HEALTH" "No recent sync activity"
+    fi
+    
+    echo -e "\n${BLUE}Health Score: $health_score/$max_score${NC}"
+    
+    if [ $health_score -eq $max_score ]; then
+        echo -e "${GREEN}🎉 Sync system is healthy!${NC}"
+        exit 0
+    elif [ $health_score -ge 3 ]; then
+        echo -e "${YELLOW}⚠️  Sync system has minor issues${NC}"
+        exit 0
+    else
+        echo -e "${RED}❌ Sync system needs attention${NC}"
+        exit 1
+    fi
+}
+
+# Statistics function
+show_stats() {
+    echo -e "${BLUE}📈 Sync Statistics${NC}"
+    echo "=================="
+    
+    if [ ! -f "$SYNC_LOG" ]; then
+        echo "No sync history available"
+        exit 0
+    fi
+    
+    echo "Total sync operations: $(grep -c '\[SYNC\]' "$SYNC_LOG" 2>/dev/null || echo '0')"
+    echo "Successful syncs: $(grep -c '\[SUCCESS\].*SYNC' "$SYNC_LOG" 2>/dev/null || echo '0')"
+    echo "Failed syncs: $(grep -c '\[ERROR\].*SYNC' "$SYNC_LOG" 2>/dev/null || echo '0')"
+    echo "Files copied: $(grep -c '\[COPY\]' "$SYNC_LOG" 2>/dev/null || echo '0')"
+    echo "Git commits: $(grep -c '\[GIT\].*Committed' "$SYNC_LOG" 2>/dev/null || echo '0')"
+    
+    if [ -f "$SYNC_LOG" ]; then
+        echo -e "\nRecent activity:"
+        tail -5 "$SYNC_LOG" | while read line; do
+            echo "  $line"
+        done
+    fi
+}
+
+# Pre-sync validation
+validate_pre_sync() {
+    log "INFO" "VALIDATE" "Starting pre-sync validation"
+    
+    # Check source directory
+    if [ ! -d "$OPENCODE_SOURCE" ]; then
+        log "ERROR" "VALIDATE" "Source directory not found: $OPENCODE_SOURCE"
+        exit 1
+    fi
+    
+    # Check backup directory
+    if [ ! -d "$OPENCODE_BACKUP" ]; then
+        log "WARN" "VALIDATE" "Backup directory not found, creating: $OPENCODE_BACKUP"
+        mkdir -p "$OPENCODE_BACKUP"
+    fi
+    
+    # Check git repository
+    if [ ! -d "$OPENCODE_BACKUP/.git" ]; then
+        log "WARN" "VALIDATE" "Git repository not initialized in backup"
+        cd "$OPENCODE_BACKUP"
+        git init
+        git config user.name "OpenCode Sync"
+        git config user.email "sync@opencode.local"
+    fi
+    
+    # Check for uncommitted changes
+    cd "$OPENCODE_BACKUP"
+    if [ -n "$(git status --porcelain)" ]; then
+        log "WARN" "VALIDATE" "Uncommitted changes in backup, stashing"
+        git stash push -m "Auto-stash before sync $(date)"
+    fi
+    
+    log "SUCCESS" "VALIDATE" "Pre-sync validation completed"
+}
+
+# Sync function
+perform_sync() {
+    log "INFO" "SYNC" "Starting synchronization"
+    
+    local files_copied=0
+    local files_updated=0
+    local files_deleted=0
+    
+    # Define sync patterns based on options
+    local sync_patterns=()
+    
+    if [ "$CONTEXT_ONLY" = true ]; then
+        sync_patterns=("context")
+    elif [ "$TOOLS_ONLY" = true ]; then
+        sync_patterns=("bin" "tool" "plugin" "command")
+    elif [ -n "$INCLUDE_PATTERN" ]; then
+        sync_patterns=("$INCLUDE_PATTERN")
+    else
+        sync_patterns=("context" "bin" "tool" "plugin" "command" "templates" "agent" ".env.example" "*.md" "package.json")
+    fi
+    
+    # Exclusion patterns
+    local exclude_patterns=(".env" "node_modules" ".tmp" "*.log" ".git" "*.key" "credentials.*")
+    
+    # Build rsync command
+    local rsync_cmd="rsync -av --delete"
+    
+    # Add exclusions
+    for pattern in "${exclude_patterns[@]}"; do
+        rsync_cmd+=" --exclude='$pattern'"
+    done
+    
+    # Add dry-run if specified
+    if [ "$DRY_RUN" = true ]; then
+        rsync_cmd+=" --dry-run"
+        log "INFO" "SYNC" "Performing dry run"
+    fi
+    
+    # Perform sync for each pattern
+    for pattern in "${sync_patterns[@]}"; do
+        if [ -e "$OPENCODE_SOURCE/$pattern" ]; then
+            log "INFO" "COPY" "Syncing $pattern"
+            
+            if [ "$DRY_RUN" = false ]; then
+                eval "$rsync_cmd '$OPENCODE_SOURCE/$pattern' '$OPENCODE_BACKUP/'"
+                ((files_copied++))
+            else
+                echo "Would sync: $pattern"
+            fi
+        fi
+    done
+    
+    # Fix permissions for scripts
+    if [ "$DRY_RUN" = false ]; then
+        find "$OPENCODE_BACKUP/bin" -type f -exec chmod +x {} \; 2>/dev/null || true
+        log "INFO" "SYNC" "Fixed script permissions"
+    fi
+    
+    log "SUCCESS" "SYNC" "Synchronization completed ($files_copied items processed)"
+}
+
+# Git operations
+perform_git_operations() {
+    if [ "$DRY_RUN" = true ]; then
+        log "INFO" "GIT" "Would commit and optionally push changes"
+        return
+    fi
+    
+    cd "$OPENCODE_BACKUP"
+    
+    # Check if there are changes to commit
+    if [ -z "$(git status --porcelain)" ]; then
+        log "INFO" "GIT" "No changes to commit"
+        return
+    fi
+    
+    # Add all changes
+    git add .
+    
+    # Create commit message
+    local commit_msg="sync: update OpenCode configuration $(date '+%Y-%m-%d %H:%M')"
+    
+    # Add details about what was synced
+    if [ "$CONTEXT_ONLY" = true ]; then
+        commit_msg="sync: update context files $(date '+%Y-%m-%d %H:%M')"
+    elif [ "$TOOLS_ONLY" = true ]; then
+        commit_msg="sync: update tools and scripts $(date '+%Y-%m-%d %H:%M')"
+    fi
+    
+    # Commit changes
+    git commit -m "$commit_msg"
+    log "SUCCESS" "GIT" "Committed changes: $commit_msg"
+    
+    # Push to GitHub if requested
+    if [ "$PUSH_TO_GITHUB" = true ]; then
+        if git remote get-url origin >/dev/null 2>&1; then
+            git push origin main
+            log "SUCCESS" "GIT" "Pushed changes to GitHub"
+        else
+            log "WARN" "GIT" "No remote origin configured, skipping push"
+        fi
+    fi
+}
+
+# Post-sync validation
+validate_post_sync() {
+    if [ "$DRY_RUN" = true ]; then
+        return
+    fi
+    
+    log "INFO" "VALIDATE" "Starting post-sync validation"
+    
+    # Run structure validation on backup
+    if [ -x "$OPENCODE_BACKUP/bin/validate-structure" ]; then
+        cd "$OPENCODE_BACKUP"
+        if ./bin/validate-structure >/dev/null 2>&1; then
+            log "SUCCESS" "VALIDATE" "Backup structure validation passed"
+        else
+            log "WARN" "VALIDATE" "Backup structure validation failed"
+        fi
+    fi
+    
+    log "SUCCESS" "VALIDATE" "Post-sync validation completed"
+}
+
+# Main execution
+main() {
+    echo -e "${BLUE}🔄 OpenCode Configuration Sync${NC}"
+    echo "================================"
+    
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${YELLOW}🔍 DRY RUN MODE - No changes will be made${NC}\n"
+    fi
+    
+    # Execute sync phases
+    validate_pre_sync
+    perform_sync
+    perform_git_operations
+    validate_post_sync
+    
+    echo -e "\n${GREEN}🎉 Sync completed successfully!${NC}"
+    
+    if [ "$DRY_RUN" = false ]; then
+        echo -e "${BLUE}💡 View sync log: tail -f $SYNC_LOG${NC}"
+        echo -e "${BLUE}💡 Check status: sync-config --status${NC}"
+    fi
+}
+
+# Run main function
+main "$@"
