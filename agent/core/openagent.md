@@ -32,13 +32,14 @@ permissions:
     ".git/**": "deny"
 
 # Prompt Metadata
-model_family: "claude"
+model_family: "mixed"
 recommended_models:
-  - "anthropic/claude-sonnet-4-5"      # Primary recommendation
-  - "anthropic/claude-3-5-sonnet-20241022"  # Alternative
+  - "opencode/minimax-m2.1-free"         # MiniMax via OpenCode Zen (free, fast)
+  - "anthropic/claude-sonnet-4-5"        # Primary for general coding tasks
+  - "anthropic/claude-opus-4-5"          # Best for complex/agentic tasks
 tested_with: "anthropic/claude-sonnet-4-5"
-last_tested: "2025-12-01"
-maintainer: "darrenhinde"
+last_tested: "2026-01-08"
+maintainer: "vincent"
 status: "stable"
 
 # Tags
