@@ -334,6 +334,113 @@ ssh vps_h 'docker network inspect traefik-network | grep -A 5 Containers'
 
 ---
 
+## immo-stras (Real Estate Scraper)
+
+### Overview
+- **Purpose:** Real estate listing aggregator and scraper for Strasbourg area
+- **Repository:** GitHub Actions CI/CD deployment
+- **Image:** GHCR (GitHub Container Registry)
+- **Container Name:** `immo-stras`
+- **Network:** `traefik-network` (external)
+- **URL:** `https://immo.vpdata.fr`
+
+### Deployment Pipeline
+```
+GitHub Push → GitHub Actions → Build & Push to GHCR → SSH to VPS → Docker Pull & Deploy
+```
+
+**CI/CD Workflow Location:** `$WORKSPACE/immo-stras/.github/workflows/deploy.yml`
+
+### Deployment Commands
+```bash
+# Trigger deployment via GitHub Actions (push to main branch)
+git add .
+git commit -m "feat: update search criteria"
+git push origin main
+
+# Or manually via SSH on VPS
+ssh vps_h 'docker pull ghcr.io/vpellerin/immo-stras:latest && \
+           docker stop immo-stras && \
+           docker rm immo-stras && \
+           docker run -d --name immo-stras ghcr.io/vpellerin/immo-stras:latest'
+```
+
+### Configuration Files
+```
+$WORKSPACE/immo-stras/
+├── docker-compose.yml          # Docker service definition
+├── Dockerfile                  # Image build definition
+├── .env.local                  # Local environment (not on VPS)
+├── .env.example               # Template for environment variables
+└── .github/workflows/deploy.yml  # CI/CD pipeline
+```
+
+### Environment Variables
+- `API_PORT` - API port (default: 8000)
+- `SCRAPING_TIMEOUT` - Timeout for scraping requests
+- `SCRAPING_MAX_RETRIES` - Maximum retry attempts
+- `SEARCH_CITIES` - Cities to search (Strasbourg,Lingolsheim,Oberhausbergen,Wolfisheim,Eckbolsheim)
+- `SEARCH_ZIPCODES` - Postal codes (67200,67380,67205,67202,67201)
+- `SEARCH_PRICE_MAX` - Maximum price (420000)
+- `SEARCH_SURFACE_MIN` - Minimum surface (85)
+- `N8N_WEBHOOK_URL` - n8n webhook for notifications
+
+### Key Features
+- **FastAPI** web interface for browsing listings
+- **LeBonCoin** scraper (primary source)
+- **Deduplication** (exact + fuzzy matching)
+- **Database** (SQLite) for persistent storage
+- **n8n Integration** for daily emails and automated scraping
+- **Traefik** reverse proxy with HTTPS
+
+### Management Commands
+```bash
+# Check status on VPS
+ssh vps_h 'docker ps | grep immo-stras'
+
+# View logs
+ssh vps_h 'docker logs -f immo-stras'
+ssh vps_h 'docker logs --tail 100 immo-stras'
+
+# Restart service
+ssh vps_h 'docker restart immo-stras'
+
+# Access container shell
+ssh vps_h 'docker exec -it immo-stras sh'
+
+# Check API health
+curl https://immo.vpdata.fr/api/health
+```
+
+### Traefik Labels
+```yaml
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.immo-http.rule=Host(`immo.vpdata.fr`)"
+  - "traefik.http.routers.immo-http.entrypoints=http"
+  - "traefik.http.routers.immo.rule=Host(`immo.vpdata.fr`)"
+  - "traefik.http.routers.immo.entrypoints=https"
+  - "traefik.http.routers.immo.tls.certresolver=letsencrypt"
+  - "traefik.http.services.immo.loadbalancer.server.port=8000"
+  - "traefik.http.middlewares.immo-auth.basicauth.users=${IMMO_BASIC_AUTH_USERS}"
+```
+
+### n8n Integration
+- **Scraping Webhook:** `https://n8n.vpdata.fr/webhook/immo-scraping`
+- **Workflows:** Located in `$WORKSPACE/immo-stras/n8n/`
+  - `workflow-daily-email.json` - Daily email summary (activated ✓)
+  - `workflow-scrape-leboncoin.json` - Automated scraping (2×/day)
+- **Email Notifications:** Gmail SMTP with App Password
+
+### Recent Changes Applied
+- **2026-01-08:** Added Eckbolsheim (67201) to search criteria
+- **Files Updated:**
+  - `docker-compose.yml` (lines 33-34)
+  - `README.md` (line 21)
+- **Deployment:** Requires GitHub Actions push to main
+
+---
+
 ## Common Operations
 
 ### Start All Services

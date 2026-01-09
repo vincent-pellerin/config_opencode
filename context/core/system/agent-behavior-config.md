@@ -8,7 +8,7 @@ This document defines how to configure the Development Agent to automatically lo
 
 ## Problem Statement
 
-Currently, the agent searches for context in `/home/vincent/dev/.opencode/*` instead of the global context in `/home/vincent/.opencode/*`. This causes:
+Currently, the agent searches for context in `$WORKSPACE/.opencode/*` instead of the global context in `~/.opencode/*`. This causes:
 
 1. **Missing global standards** - Agent doesn't apply universal coding standards
 2. **Inconsistent behavior** - Each session starts without proper context

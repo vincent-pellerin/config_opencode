@@ -16,7 +16,7 @@ This document describes all environments where projects are deployed and how to 
 
 ### Directory Structure
 ```
-/home/vincent/dev/
+$WORKSPACE/
 ├── dlthub-unified/          # dlt + dbt data pipeline
 ├── immo-stras/              # Real estate scraping (DuckDB, PostgreSQL)
 ├── ga4-weekly-report/       # Google Analytics 4 reporting
@@ -175,21 +175,21 @@ ssh vps_dlt 'tail -f /home/dlthub/dlthub-project/dlthub-unified/logs/*.log'
 ## Project Mapping (Local ↔ VPS)
 
 ### dlthub-unified
-- **Local:** `/home/vincent/dev/dlthub-unified/`
+- **Local:** `$WORKSPACE/dlthub-unified/`
 - **VPS:** `/home/dlthub/dlthub-project/dlthub-unified/`
 - **VPS User:** `dlthub` (via `vps_dlt`)
 - **Stack:** Python (uv), dlt, dbt, BigQuery
 - **Deployment:** Git push + SSH to VPS
 
 ### immo-stras
-- **Local:** `/home/vincent/dev/immo-stras/`
+- **Local:** `$WORKSPACE/immo-stras/`
 - **VPS:** `/home/vincent/immo-stras/`
 - **VPS User:** `vincent` (via `vps_h`)
 - **Stack:** Python, Playwright, DuckDB, PostgreSQL
 - **Deployment:** Git push + SSH to VPS
 
 ### ga4-weekly-report
-- **Local:** `/home/vincent/dev/ga4-weekly-report/`
+- **Local:** `$WORKSPACE/ga4-weekly-report/`
 - **VPS:** `/home/vincent/ga4-weekly-report/`
 - **VPS User:** `vincent` (via `vps_h`)
 - **Stack:** Python, Google Analytics 4 API, BigQuery

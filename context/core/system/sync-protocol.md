@@ -2,7 +2,7 @@
 
 ## Overview
 
-Automatic synchronization system between the active OpenCode configuration (`~/.opencode/`) and the versioned backup repository (`/home/vincent/dev/config_opencode/`).
+Automatic synchronization system between the active OpenCode configuration (`~/.opencode/`) and the versioned backup repository (`$WORKSPACE/config_opencode/`).
 
 ---
 
@@ -16,7 +16,7 @@ Automatic synchronization system between the active OpenCode configuration (`~/.
 
 ### Sync Direction
 ```
-~/.opencode/ (MASTER) → /home/vincent/dev/config_opencode/ (BACKUP)
+~/.opencode/ (MASTER) → $WORKSPACE/config_opencode/ (BACKUP)
 ```
 
 **Important**: Synchronization is unidirectional - backup never overwrites master.
@@ -154,9 +154,9 @@ EXCLUDE_PATTERNS=(
 
 #### 1. Backup Repository Dirty
 **Issue**: Uncommitted changes in backup repo
-**Solution**: 
+**Solution**:
 ```bash
-cd /home/vincent/dev/config_opencode
+cd $WORKSPACE/config_opencode
 git stash push -m "Auto-stash before sync $(date)"
 # Proceed with sync
 git stash pop  # If needed later
@@ -166,14 +166,14 @@ git stash pop  # If needed later
 **Issue**: Cannot write to backup directory
 **Solution**: Fix permissions and retry
 ```bash
-chmod -R u+w /home/vincent/dev/config_opencode
+chmod -R u+w $WORKSPACE/config_opencode
 ```
 
 #### 3. Git Conflicts
 **Issue**: Git merge conflicts in backup
 **Solution**: Reset backup to clean state
 ```bash
-cd /home/vincent/dev/config_opencode
+cd $WORKSPACE/config_opencode
 git reset --hard HEAD
 # Retry sync
 ```
@@ -182,7 +182,7 @@ git reset --hard HEAD
 **Issue**: Target directories don't exist in backup
 **Solution**: Create missing directory structure
 ```bash
-mkdir -p /home/vincent/dev/config_opencode/{context,bin,templates,agent}
+mkdir -p $WORKSPACE/config_opencode/{context,bin,templates,agent}
 ```
 
 ## Monitoring and Logging

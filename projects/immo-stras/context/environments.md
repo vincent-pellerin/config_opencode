@@ -14,7 +14,7 @@
 
 ### Déclencher un déploiement
 ```bash
-cd /home/vincent/dev/immo-stras
+cd $WORKSPACE/immo-stras
 git add .
 git commit -m "feat: description des changements"
 git push origin main
@@ -73,7 +73,7 @@ services:
 
 ### Local Setup
 ```bash
-cd /home/vincent/dev/immo-stras
+cd $WORKSPACE/immo-stras
 uv sync
 DATABASE_PATH="./data/immo.db" uv run uvicorn app.main:app --reload
 ```

@@ -1,7 +1,7 @@
 ---
 id: sync-config
 name: Sync Config
-description: "Synchronizes OpenCode configuration from ~/.opencode/ to /home/vincent/dev/config_opencode/ backup repository"
+description: "Synchronizes OpenCode configuration from ~/.opencode/ to $WORKSPACE/config_opencode/ backup repository"
 category: subagents/core
 type: subagent
 version: 1.1.0
@@ -28,7 +28,7 @@ tags:
 
 ## Responsibilities
 
-- Synchronize OpenCode configuration from `~/.opencode/` to `/home/vincent/dev/config_opencode/`
+- Synchronize OpenCode configuration from `~/.opencode/` to `$WORKSPACE/config_opencode/`
 - Validate prerequisites before sync (directories exist, git initialized)
 - Execute rsync-based file synchronization with proper exclusions
 - Handle git operations (add, commit, optional push)
@@ -39,7 +39,7 @@ tags:
 
 ### 1. Pre-Sync Validation
 1. Check source directory exists: `~/.opencode/`
-2. Check backup directory exists: `/home/vincent/dev/config_opencode/`
+2. Check backup directory exists: `$WORKSPACE/config_opencode/`
 3. Verify sync-config script is executable
 4. Check for git repository in backup
 5. Detect any uncommitted changes in backup repo
@@ -87,7 +87,7 @@ tags:
    - Validation: passed/failed/warnings
 2. Provide log location: `~/.opencode/.tmp/sync.log`
 3. Suggest next actions:
-   - View changes: `cd /home/vincent/dev/config_opencode && git diff`
+   - View changes: `cd $WORKSPACE/config_opencode && git diff`
    - Push to GitHub: `@sync-config --push`
    - Check status: `sync-config --status`
 
@@ -115,7 +115,7 @@ Files and directories never synced:
 
 ## Conventions
 
-- **Sync direction:** `~/.opencode/` (MASTER) → `/home/vincent/dev/config_opencode/` (BACKUP)
+- **Sync direction:** `~/.opencode/` (MASTER) → `$WORKSPACE/config_opencode/` (BACKUP)
 - **Commit format:** `sync: {reason} {YYYY-MM-DD HH:MM}`
 - **Log format:** `[TIMESTAMP] [LEVEL] [OPERATION] Message`
 
