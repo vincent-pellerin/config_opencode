@@ -351,6 +351,54 @@ api_key = "sk-1234567890abcdef"  # NEVER DO THIS
 - `*.key`, `*.pem`
 - API keys or tokens
 
+#### Anti-Detection Patterns
+
+**Proxy Rotation Best Practices:**
+```python
+# ✅ Geolocation-aware proxy rotation
+class ProxyRotator:
+    def get_proxy_with_location(self) -> Tuple[Dict, str]:
+        """Return proxy config with detected country."""
+        proxy = self.get_next_proxy()
+        location = self.detect_location(proxy)
+        return proxy, location
+
+# ✅ Anonymous cookie generation per session
+def generate_anonymous_cookies(country: str) -> Dict:
+    """Generate realistic cookies for specific country."""
+    timezone = COUNTRY_TIMEZONES.get(country, 'UTC')
+    return create_session_cookies(timezone)
+```
+
+**Anonymous Cookie Management:**
+```python
+# ✅ Session-based anonymous cookies
+class SmartCookieManager:
+    def get_session_cookies(self, ip: str) -> Dict:
+        """Get or create anonymous cookies for IP."""
+        if ip not in self.sessions:
+            self.sessions[ip] = self.generate_anonymous_session()
+        return self.sessions[ip]['cookies']
+
+# ❌ Personal cookie reuse
+cookies = load_personal_cookies()  # AVOID - Privacy risk
+```
+
+**Anti-Detection Headers:**
+```python
+# ✅ Realistic browser fingerprinting
+def get_realistic_headers(country: str) -> Dict:
+    """Generate realistic headers for country."""
+    return {
+        'User-Agent': get_random_user_agent(),
+        'Accept-Language': get_country_language(country),
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+```
+
 ### Package Management (uv)
 Modern, fast Python package manager.
 
@@ -498,7 +546,9 @@ repos:
         args: [--line-length, "100"]
 ```
 
-### CI/CD Pipeline Pattern
+### CI/CD Pipeline Patterns
+
+#### Standard CI Pipeline (GitHub Actions)
 
 ```yaml
 # .github/workflows/ci.yml
@@ -528,6 +578,46 @@ jobs:
       - run: uv run black --check .
       - run: uv run isort --check-only .
       - run: uv run pytest tests/ -v
+```
+
+#### VPS Auto-Deploy Pattern (Alternative to SSH Deployment)
+
+For projects with large binaries or SSH timeout issues:
+
+```bash
+# VPS-based auto-deploy with cron job
+# Eliminates network latency and SSH timeouts
+# Builds locally on VPS instead of transferring binaries
+
+# auto-deploy.sh (runs every 5 minutes via cron)
+#!/bin/bash
+LOCK_FILE="/tmp/auto-deploy.lock"
+if [ -f "$LOCK_FILE" ]; then exit 0; fi
+echo $$ > "$LOCK_FILE"
+
+git fetch origin main
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+  echo "🚀 New commits detected, deploying..."
+  git reset --hard origin/main
+  go build -o ~/.local/bin/binary ./cmd/
+  uv sync
+  ./restart-services.sh
+fi
+
+rm -f "$LOCK_FILE"
+```
+
+**When to use VPS Auto-Deploy:**
+- ✅ Large binary transfers (>5MB)
+- ✅ SSH timeout issues
+- ✅ VPS has reliable git access
+- ✅ Local builds are faster than transfers
+
+**Architecture:**
+```
+Developer → GitHub → GitHub Actions (CI only)
+                           ↓ (no deployment)
+VPS Cron → git pull → local build → restart services
 ```
 
 ### Python-Specific Anti-Patterns

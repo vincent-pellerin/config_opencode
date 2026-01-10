@@ -349,7 +349,7 @@ ssh vps_h 'docker network inspect traefik-network | grep -A 5 Containers'
 GitHub Push → GitHub Actions → Build & Push to GHCR → SSH to VPS → Docker Pull & Deploy
 ```
 
-**CI/CD Workflow Location:** `$WORKSPACE/immo-stras/.github/workflows/deploy.yml`
+**CI/CD Workflow Location:** `/home/vincent/dev/immo-stras/.github/workflows/deploy.yml`
 
 ### Deployment Commands
 ```bash
@@ -367,7 +367,7 @@ ssh vps_h 'docker pull ghcr.io/vpellerin/immo-stras:latest && \
 
 ### Configuration Files
 ```
-$WORKSPACE/immo-stras/
+/home/vincent/dev/immo-stras/
 ├── docker-compose.yml          # Docker service definition
 ├── Dockerfile                  # Image build definition
 ├── .env.local                  # Local environment (not on VPS)
@@ -427,7 +427,7 @@ labels:
 
 ### n8n Integration
 - **Scraping Webhook:** `https://n8n.vpdata.fr/webhook/immo-scraping`
-- **Workflows:** Located in `$WORKSPACE/immo-stras/n8n/`
+- **Workflows:** Located in `/home/vincent/dev/immo-stras/n8n/`
   - `workflow-daily-email.json` - Daily email summary (activated ✓)
   - `workflow-scrape-leboncoin.json` - Automated scraping (2×/day)
 - **Email Notifications:** Gmail SMTP with App Password

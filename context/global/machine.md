@@ -255,12 +255,12 @@ sudo systemctl enable service_name
 ## Obsidian
 
 ### Obsidian Vaults
-- **Local:** `$WORKSPACE/Obsidian/`
+- **Local:** `/home/vincent/dev/Obsidian/`
 - **VPS:** `/home/vincent/obsidian-second-brain-vps/`
 - **Sync:** Git-based synchronization scripts
 
 ### Sync Scripts
-- **Location:** `$WORKSPACE/obsidian-sync/`
+- **Location:** `/home/vincent/dev/obsidian-sync/`
 - **VPS Location:** `/home/vincent/obsidian-sync/`
 - **Purpose:** Automated vault synchronization between local and VPS
 

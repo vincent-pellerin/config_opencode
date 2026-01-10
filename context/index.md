@@ -39,6 +39,7 @@
 - `global/docker-services.md` - Docker service configurations
 - `global/project-setup.md` - Project setup patterns
 - `global/project-creation.md` - Project creation workflows
+- `local/projects/immo-stras.md` - Real estate scraper project (FastAPI, Docker, n8n, CI/CD)
 
 ### Integrations
 - `integrations/n8n/config.md` - n8n API connection and debugging
@@ -81,6 +82,11 @@
 **Triggers**: vps, ssh, ssh vps_h, remote, server, connection
 **Load**: `vps/connections.md`
 **Deps**: `~/.ssh/config` (loaded automatically by SSH tool)
+
+### immo-stras Real Estate Project
+**Triggers**: immo-stras, real estate, scraping, leboncoin, apartment search,CI/CD deployment, docker vps
+**Load**: `local/projects/immo-stras.md`
+**Deps**: `integrations/n8n/config.md`
 
 ### Analysis and Investigation
 **Triggers**: analyze, investigate, bug, performance, architecture

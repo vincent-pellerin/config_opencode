@@ -31,7 +31,7 @@ fi
 #### Local Development
 - **Hostname:** `vincent-X390-2025`
 - **User:** `vincent`
-- **Path:** `$WORKSPACE/`
+- **Path:** `/home/vincent/dev/`
 - **Purpose:** Development, testing, local Obsidian vault
 
 #### VPS Production (vincent)
@@ -52,9 +52,9 @@ fi
 
 | Project | Local | VPS | VPS User | Stack |
 |---------|-------|-----|----------|-------|
-| **dlthub-unified** | `$WORKSPACE/dlthub-unified/` | `/home/dlthub/dlthub-project/dlthub-unified/` | `dlthub` (vps_dlt) | Python, dlt, dbt, BigQuery |
-| **immo-stras** | `$WORKSPACE/immo-stras/` | `/home/vincent/immo-stras/` | `vincent` (vps_h) | Python, Playwright, DuckDB, PostgreSQL |
-| **ga4-weekly-report** | `$WORKSPACE/ga4-weekly-report/` | `/home/vincent/ga4-weekly-report/` | `vincent` (vps_h) | Python, GA4 API, BigQuery |
+| **dlthub-unified** | `/home/vincent/dev/dlthub-unified/` | `/home/dlthub/dlthub-project/dlthub-unified/` | `dlthub` (vps_dlt) | Python, dlt, dbt, BigQuery |
+| **immo-stras** | `/home/vincent/dev/immo-stras/` | `/home/vincent/immo-stras/` | `vincent` (vps_h) | Python, Playwright, DuckDB, PostgreSQL |
+| **ga4-weekly-report** | `/home/vincent/dev/ga4-weekly-report/` | `/home/vincent/ga4-weekly-report/` | `vincent` (vps_h) | Python, GA4 API, BigQuery |
 
 ### Critical Rules for Agents
 - **ALWAYS verify environment** before executing commands
